@@ -523,7 +523,7 @@ class ProcuredBalancingCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         process_type: str,
         # Additional common parameters
         offset: int = 0,
@@ -534,7 +534,7 @@ class ProcuredBalancingCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Scheduling Area
             process_type: A46=RR, A47=mFRR, A51=aFRR, A52=FCR
             offset: Offset for pagination
         """
@@ -543,7 +543,7 @@ class ProcuredBalancingCapacity(Balancing):
             document_type="A15",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type=process_type,
             offset=offset,
         )
