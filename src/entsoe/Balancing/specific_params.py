@@ -659,7 +659,7 @@ class FCRTotalCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         # Additional common parameters
     ):
         """
@@ -668,14 +668,14 @@ class FCRTotalCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Synchronous Area
         """
         # Initialize with preset and user parameters
         super().__init__(
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             business_type="A25",
         )
 
@@ -702,7 +702,7 @@ class SharesOfFCRCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         # Additional common parameters
     ):
         """
@@ -711,14 +711,14 @@ class SharesOfFCRCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Synchronous Area
         """
         # Initialize with preset and user parameters
         super().__init__(
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             business_type="C23",
         )
 
@@ -746,7 +746,7 @@ class SharingOfFCRBetweenSAs(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         # Additional common parameters
     ):
         """
@@ -755,14 +755,14 @@ class SharingOfFCRBetweenSAs(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Scheduling Area
         """
         # Initialize with preset and user parameters
         super().__init__(
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type="A52",
             business_type="C22",
         )
@@ -789,7 +789,7 @@ class FRRAndRRCapacityOutlook(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         process_type: str,
         # Additional common parameters
     ):
@@ -799,7 +799,7 @@ class FRRAndRRCapacityOutlook(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of LFB Area
             process_type: A46=Replacement Reserve, A56=Frequency Restoration Reserve
         """
         # Initialize with preset and user parameters
@@ -807,7 +807,7 @@ class FRRAndRRCapacityOutlook(Balancing):
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type=process_type,
             business_type="C76",
         )
@@ -834,7 +834,7 @@ class FRRAndRRActualCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         process_type: str,
         business_type: str,
         # Additional common parameters
@@ -845,7 +845,7 @@ class FRRAndRRActualCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of LFB Area
             process_type: A46=Replacement reserve, A56=Frequency restoration reserve
             business_type: C77=Min, C78=Avg, C79=Max
         """
@@ -854,7 +854,7 @@ class FRRAndRRActualCapacity(Balancing):
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type=process_type,
             business_type=business_type,
         )
@@ -883,7 +883,7 @@ class OutlookOfReserveCapacitiesOnRR(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         # Additional common parameters
         offset: int = 0,
     ):
@@ -893,7 +893,7 @@ class OutlookOfReserveCapacitiesOnRR(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Scheduling Area
             offset: Offset for pagination
         """
         # Initialize with preset and user parameters
@@ -901,7 +901,7 @@ class OutlookOfReserveCapacitiesOnRR(Balancing):
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type="A46",
             business_type="C76",
             offset=offset,
@@ -931,7 +931,7 @@ class RRActualCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        area_domain: str,
         # Additional common parameters
         offset: int = 0,
     ):
@@ -941,7 +941,7 @@ class RRActualCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Scheduling Area
             offset: Offset for pagination
         """
         # Initialize with preset and user parameters
@@ -949,7 +949,7 @@ class RRActualCapacity(Balancing):
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            area_domain=area_domain,
             process_type="A46",
             business_type="C77",
             offset=offset,
@@ -966,6 +966,7 @@ class SharingOfRRAndFRR(Balancing):
 
     - documentType: A26 (Capacity document)
     - processType: A56 (Frequency restoration reserve)
+    - businessType: C22 (Shared balancing reserve capacity)
 
     Notes:
     - Shows sharing arrangements for RR and FRR between areas
@@ -978,7 +979,8 @@ class SharingOfRRAndFRR(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        acquiring_domain: str,
+        connecting_domain: str,
         # Additional common parameters
     ):
         """
@@ -987,15 +989,18 @@ class SharingOfRRAndFRR(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            acquiring_domain: EIC code of Load Frequency Control Block
+            connecting_domain: EIC code of Load Frequency Control Block
         """
         # Initialize with preset and user parameters
         super().__init__(
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            acquiring_domain=acquiring_domain,
+            connecting_domain=connecting_domain,
             process_type="A56",
+            business_type="C22",
         )
 
 
@@ -1009,6 +1014,7 @@ class ExchangedReserveCapacity(Balancing):
 
     - documentType: A26 (Capacity document)
     - processType: A46 (Replacement reserve)
+    - businessType: C21 (Exchanged balancing reserve capacity)
 
     Notes:
     - Shows exchanged reserve capacity between areas
@@ -1021,7 +1027,8 @@ class ExchangedReserveCapacity(Balancing):
         self,
         period_start: int,
         period_end: int,
-        bidding_zone_domain: str,
+        acquiring_domain: str,
+        connecting_domain: str,
         # Additional common parameters
         offset: int = 0,
     ):
@@ -1031,7 +1038,8 @@ class ExchangedReserveCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            bidding_zone_domain: EIC code of Bidding Zone or Market Balancing Area
+            acquiring_domain: EIC code of Load Frequency Control Block
+            connecting_domain: EIC code of Load Frequency Control Block
             offset: Offset for pagination
         """
         # Initialize with preset and user parameters
@@ -1039,8 +1047,10 @@ class ExchangedReserveCapacity(Balancing):
             document_type="A26",
             period_start=period_start,
             period_end=period_end,
-            bidding_zone_domain=bidding_zone_domain,
+            acquiring_domain=acquiring_domain,
+            connecting_domain=connecting_domain,
             process_type="A46",
+            business_type="C21",
             offset=offset,
         )
 
