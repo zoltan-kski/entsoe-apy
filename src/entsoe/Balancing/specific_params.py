@@ -534,7 +534,7 @@ class ProcuredBalancingCapacity(Balancing):
         Args:
             period_start: Start period (YYYYMMDDHHMM format)
             period_end: End period (YYYYMMDDHHMM format)
-            area_domain: EIC code of Bidding Zone or Market Balancing Area
+            area_domain: EIC code of Scheduling Area
             process_type: A46=RR, A47=mFRR, A51=aFRR, A52=FCR
             offset: Offset for pagination
         """
