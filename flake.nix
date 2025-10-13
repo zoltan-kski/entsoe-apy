@@ -38,6 +38,8 @@
           pypkgs.mkdocstrings
           pypkgs.mkdocstrings-python
           pypkgs.pytest
+          pypkgs.build
+          pypkgs.twine
 
         ];
 

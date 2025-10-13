@@ -35,7 +35,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/BerriJ/entsoe-api-py/issues"
 
 [dependency-groups]
-dev = ["pytest~=8.3.3", "pytest-xdist~=3.6.1", "ruff==0.12.4"]
+dev = ["pytest~=8.3.3", "pytest-xdist~=3.6.1", "ruff==0.12.4", "build", "twine"]
 
 [tool.ruff]
 exclude = [
