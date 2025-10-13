@@ -277,9 +277,7 @@ def service_unavailable(func):
         # Check each response for 503 status
         for response in response_list:
             if response.status_code == 503:
-                raise ServiceUnavailableError(
-                    "ENTSO-E API is unavailable (HTTP 503)."
-                )
+                raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
 
         logger.debug("No 503 Service Unavailable responses found")
         return response_list
