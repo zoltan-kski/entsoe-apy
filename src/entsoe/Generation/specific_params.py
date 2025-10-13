@@ -30,6 +30,9 @@ class InstalledCapacityPerProductionType(Generation):
     """
 
     code = "14.1.A"
+    max_days_limit: int = (
+        36500  # Override: No maximum for this endpoint
+    )
 
     def __init__(
         self,
