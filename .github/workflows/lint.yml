@@ -41,7 +41,6 @@ jobs:
               with:
                   commit_message: "Style fixes by ruff"
                   file_pattern: "*.py"
-                  skip_fetch: true
 
             - name: Lint (check for remaining issues)
               run: ruff check --output-format=github .
