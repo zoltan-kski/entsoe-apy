@@ -277,10 +277,7 @@ def service_unavailable(func):
         # Check each response for 503 status
         for response in response_list:
             if response.status_code == 503:
-                logger.error("ENTSO-E API returned 503 Service Unavailable.")
-                raise ServiceUnavailableError(
-                    "ENTSO-E API is currently unavailable (HTTP 503). Please try again later."
-                )
+                raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
 
         logger.debug("No 503 Service Unavailable responses found")
         return response_list
@@ -309,16 +306,10 @@ def retry(func):
             # Catch connection errors, socket errors, and service unavailable errors
             except (RequestError, ServiceUnavailableError) as e:
                 last_exception = e
-                if isinstance(e, ServiceUnavailableError):
-                    logger.warning(
-                        f"Service Unavailable Error on attempt {attempt + 1}/{config.retries}: "
-                        f"{e}. Retrying in {config.retry_delay(attempt)} seconds..."
-                    )
-                else:
-                    logger.warning(
-                        f"Connection Error on attempt {attempt + 1}/{config.retries}: "
-                        f"{e}. Retrying in {config.retry_delay(attempt)} seconds..."
-                    )
+                logger.warning(
+                    f"Connection Error on attempt {attempt + 1}/{config.retries}: "
+                    f"{e}. Retrying in {config.retry_delay(attempt)} seconds..."
+                )
                 if attempt < config.retries - 1:  # Don't sleep on the last attempt
                     sleep(config.retry_delay(attempt))
                 continue
