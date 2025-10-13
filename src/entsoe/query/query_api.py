@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 from httpx import Response, get
 from loguru import logger
+from pydantic import BaseModel
 from xsdata_pydantic.bindings import XmlParser
 
 from ..config.config import get_config
