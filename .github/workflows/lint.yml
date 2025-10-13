@@ -39,7 +39,7 @@ jobs:
               if: github.event.pull_request.head.repo.fork == false
               uses: stefanzweifel/git-auto-commit-action@v6
               with:
-                  commit_message: "[AUTOMATED] Style fixes by ruff"
+                  commit_message: "Style fixes by ruff"
                   file_pattern: "*.py"
                   skip_fetch: true
 
@@ -49,6 +49,6 @@ jobs:
     run-tests:
         needs: lint
         if: always()
-        uses: ./.github/workflows/ci_run_tests.yml
+        uses: ./.github/workflows/tests.yml
         permissions:
             contents: read
