@@ -9,3 +9,4 @@ The subpages of this section document the classes to query the API. They are gro
 - [Outages](./outages.md)
 - [Balancing](./balancing.md)
 - [OMI](./omi.md)
+- [Master Data](./master_data.md)
