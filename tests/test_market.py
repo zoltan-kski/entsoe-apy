@@ -1,5 +1,3 @@
-from os import getenv
-
 import pytest
 
 from entsoe.config import get_config
