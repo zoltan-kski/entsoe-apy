@@ -65,8 +65,9 @@ class EntsoEConfig:
         logger.remove()
         logger.add(sink=sys.stdout, level=log_level.upper(), colorize=True)
         # Handle security token
-        if security_token is None and os.getenv("ENTSOE_API") is not None:
-            security_token = os.getenv("ENTSOE_API")
+        env_token = os.getenv("ENTSOE_API") or None
+        if security_token is None and env_token is not None:
+            security_token = env_token
             logger.success("Security token found in environment.")
 
         if security_token is None:
