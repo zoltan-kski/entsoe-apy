@@ -1,17 +1,15 @@
 # %%
-from os import getenv
 
 import pytest
 
+from entsoe.config import get_config
 from entsoe.Market import EnergyPrices
 from entsoe.utils import extract_records
-from entsoe.config import get_config
-
-
 
 
 @pytest.mark.skipif(
-    get_config().security_token is None, reason="ENTSOE_API environment variable not set"
+    get_config().security_token is None,
+    reason="ENTSOE_API environment variable not set",
 )
 def test_extract_records():
     EIC = "10Y1001A1001A82H"

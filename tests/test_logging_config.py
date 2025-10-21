@@ -12,7 +12,7 @@ class TestLoggingConfig:
 
     def test_config_accepts_log_level_parameter(self):
         """Test that EntsoEConfig accepts log_level parameter."""
-        config = EntsoEConfig( log_level="DEBUG")
+        config = EntsoEConfig(log_level="DEBUG")
         assert config.log_level == "DEBUG"
 
     def test_config_defaults_to_success_log_level(self):

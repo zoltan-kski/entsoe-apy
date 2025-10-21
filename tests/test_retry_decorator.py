@@ -258,9 +258,7 @@ class TestRetryDecorator:
 
     def test_integer_retry_delay(self):
         """Test that integer retry_delay values work correctly."""
-        set_config(
-            retries=3, retry_delay=7
-        )  # Integer delay
+        set_config(retries=3, retry_delay=7)  # Integer delay
 
         call_count = 0
 
