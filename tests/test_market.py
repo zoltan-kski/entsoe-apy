@@ -3,18 +3,13 @@ import pytest
 from entsoe.config import get_config
 from entsoe.Market import EnergyPrices
 
-config = get_config()
-
-EIC = "10Y1001A1001A82H"
-
-period_start = 202012312300
-period_end = 202101022300
-
-
 @pytest.mark.skipif(
-    config.security_token is None, reason="ENTSOE_API environment variable not set"
+    get_config().security_token is None, reason="ENTSOE_API environment variable not set"
 )
 def test_energy_prices():
+    EIC = "10Y1001A1001A82H"
+    period_start = 202012312300
+    period_end = 202101022300
     object = EnergyPrices(
         in_domain=EIC,
         out_domain=EIC,

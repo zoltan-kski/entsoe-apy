@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 from entsoe import set_config
-from entsoe.config.config import reset_config
 from entsoe.query.decorators import retry
 
 
@@ -15,13 +14,7 @@ class TestRetryDecorator:
 
     def setup_method(self):
         """Set up test configuration before each test."""
-        set_config(
-            security_token="test_token", retries=3, retry_delay=lambda attempt: 1
-        )
-
-    def teardown_method(self):
-        """Clean up configuration after each test."""
-        reset_config()
+        set_config(retries=3, retry_delay=lambda attempt: 1)
 
     def test_retry_decorator_success_on_first_attempt(self):
         """Test that retry decorator works correctly when function succeeds
@@ -213,9 +206,7 @@ class TestRetryDecorator:
 
     def test_default_exponential_backoff(self):
         """Test that default exponential backoff function works correctly."""
-        # Reset to use default configuration
-        reset_config()
-        set_config(security_token="test_token", retries=3)
+        set_config(retries=3)
 
         call_count = 0
 
@@ -243,8 +234,7 @@ class TestRetryDecorator:
         def linear_backoff(attempt):
             return (attempt + 1) * 5  # 5, 10, 15, etc.
 
-        reset_config()
-        set_config(security_token="test_token", retries=3, retry_delay=linear_backoff)
+        set_config(retries=3, retry_delay=linear_backoff)
 
         call_count = 0
 
@@ -268,9 +258,8 @@ class TestRetryDecorator:
 
     def test_integer_retry_delay(self):
         """Test that integer retry_delay values work correctly."""
-        reset_config()
         set_config(
-            security_token="test_token", retries=3, retry_delay=7
+            retries=3, retry_delay=7
         )  # Integer delay
 
         call_count = 0
