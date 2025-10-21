@@ -1,11 +1,15 @@
 """Test module for verifying debug logging functionality."""
-
+import pytest
 from unittest.mock import Mock, patch
 
 from entsoe.query.query_api import query_core
 from entsoe.utils.utils import check_date_range_limit, split_date_range
+from entsoe.config import get_config
 
-
+@pytest.mark.skipif(
+    get_config().security_token is None,
+    reason="ENTSOE_API environment variable not set",
+)
 class TestLogging:
     """Test class for logging functionality."""
 
