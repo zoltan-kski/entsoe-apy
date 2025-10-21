@@ -178,20 +178,3 @@ def set_config(
         retry_delay=retry_delay,
         log_level=log_level,
     )
-
-
-def has_config() -> bool:
-    """
-    Check if global configuration has been set.
-
-    Returns:
-        True if global configuration exists, False otherwise
-    """
-    global _global_config
-    return _global_config is not None
-
-
-def reset_config() -> None:
-    """Reset the global configuration to None."""
-    global _global_config
-    _global_config = None
