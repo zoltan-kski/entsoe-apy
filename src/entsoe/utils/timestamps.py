@@ -6,7 +6,10 @@ from loguru import logger
 
 
 def calculate_timestamp(
-    start: str, resolution: str, position: int, interval_type: Literal["start", "end"] = "start"
+    start: str,
+    resolution: str,
+    position: int,
+    interval_type: Literal["start", "end"] = "start",
 ) -> str:
     """
     Calculate actual timestamp from period information in ENTSO-E data.
@@ -31,16 +34,16 @@ def calculate_timestamp(
         >>> ts = calculate_timestamp('2024-08-19T22:00Z', 'PT60M', 1)
         >>> print(ts)
         2024-08-19T22:00:00+00:00
-        
+
         >>> ts = calculate_timestamp('2024-08-19T22:00Z', 'PT60M', 2)
         >>> print(ts)
         2024-08-19T23:00:00+00:00
-        
+
         >>> # Yearly resolution
         >>> ts = calculate_timestamp('2015-01-01T00:00Z', 'P1Y', 1)
         >>> print(ts)
         2015-01-01T00:00:00+00:00
-        
+
         >>> ts = calculate_timestamp('2015-01-01T00:00Z', 'P1Y', 2)
         >>> print(ts)
         2016-01-01T00:00:00+00:00
@@ -52,31 +55,35 @@ def calculate_timestamp(
     elif interval_type == "start":
         timestamp = start_dt + (duration * (position - 1))
     else:
-        raise ValueError(f"Invalid interval_type: {interval_type}. Must be 'start' or 'end'.")
+        raise ValueError(
+            f"Invalid interval_type: {interval_type}. Must be 'start' or 'end'."
+        )
     timestamp_str = timestamp.isoformat()
     return timestamp_str
+
 
 def find_field_key(record: Dict[str, Any], search_field: str) -> str | None:
     """
     Find a field key in the record by exact match or suffix match.
-    
+
     Args:
         record: The record dictionary to search in
         search_field: The field pattern to search for
-        
+
     Returns:
         The actual key from the record, or None if not found
     """
     # First try exact match
     if search_field in record:
         return search_field
-    
+
     # Then try suffix match
     for key in record.keys():
         if key.endswith(search_field):
             return key
-    
+
     return None
+
 
 def add_timestamps(
     records: List[Dict[str, Any]],
@@ -91,7 +98,7 @@ def add_timestamps(
 
     This function takes the output from extract_records() and adds a timestamp
     field to each record by calculating it from the period information fields.
-    
+
     Field matching supports both exact matches and suffix matches. For example,
     if you specify "period.resolution" as the resolution_field, it will match
     both "period.resolution" (exact) and "time_series.period.resolution" (suffix).
@@ -130,14 +137,14 @@ def add_timestamps(
         ...     }
         ... ]
         >>> # Works with partial field names
-        >>> result = add_timestamps(records, 
+        >>> result = add_timestamps(records,
         ...                         start_field="period.time_interval.start",
         ...                         resolution_field="period.resolution",
         ...                         position_field="period.point.position")
         >>> print(result[0]['timestamp'])
         2024-08-19T22:00:00+00:00
     """
-    
+
     enriched_records = []
     missing_fields_logged = False
 
@@ -176,13 +183,15 @@ def add_timestamps(
             assert actual_start_field is not None
             assert actual_resolution_field is not None
             assert actual_position_field is not None
-            
+
             start = record[actual_start_field]
             resolution = record[actual_resolution_field]
             position = record[actual_position_field]
 
             # Calculate timestamp
-            timestamp = calculate_timestamp(start, resolution, position, interval_type=interval_type)
+            timestamp = calculate_timestamp(
+                start, resolution, position, interval_type=interval_type
+            )
 
             # Add timestamp to the record
             enriched_record[timestamp_field] = timestamp
@@ -198,5 +207,3 @@ def add_timestamps(
         enriched_records.append(enriched_record)
 
     return enriched_records
-
-
