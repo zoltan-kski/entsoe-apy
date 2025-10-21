@@ -11,8 +11,8 @@ from xsdata_pydantic.bindings import XmlParser
 from ..config.config import get_config
 from ..utils.utils import (
     check_date_range_limit,
-    split_date_range,
     extract_namespace_and_find_classes,
+    split_date_range,
 )
 
 
@@ -26,6 +26,7 @@ class ServiceUnavailableError(Exception):
     """Raised when the ENTSO-E API returns a 503 Service Unavailable status."""
 
     pass
+
 
 class UnexpectedError(Exception):
     """Raised when the ENTSO-E API returns an unexpected error."""
@@ -319,7 +320,6 @@ def acknowledgement_unexpected_error(func):
         responses: list[Response] = func(*args, **kwargs)
 
         for idx, response in enumerate(responses):
-
             name, matching_class = extract_namespace_and_find_classes(response)
 
             if name and "acknowledgementmarketdocument" in name.lower():
