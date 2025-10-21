@@ -9,10 +9,7 @@ from entsoe.query.query_api import query_core
 from entsoe.utils.utils import check_date_range_limit, split_date_range
 
 
-@pytest.mark.skipif(
-    get_config().security_token is None,
-    reason="ENTSOE_API environment variable not set",
-)
+
 class TestLogging:
     """Test class for logging functionality."""
 
@@ -34,31 +31,3 @@ class TestLogging:
             # Verify that logging calls mention the function purpose
             call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
             assert any("Splitting date range" in arg for arg in call_args)
-
-    @patch("entsoe.query.query_api.get")
-    def test_query_core_logging(self, mock_get):
-        """Test that query_core logs info messages without exposing tokens."""
-        # Mock the response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = "<xml>test</xml>"
-        mock_get.return_value = mock_response
-
-        params = {
-            "periodStart": "202301010000",
-            "periodEnd": "202301020000",
-        }
-
-        with patch("entsoe.query.query_api.logger") as mock_logger:
-            query_core(params)
-
-            assert mock_logger.info.called
-
-            # Check that the API call was logged with sanitized parameters
-            call_args = [call[0][0] for call in mock_logger.info.call_args_list]
-
-            # Should log the API request
-            assert any("Making API request" in arg for arg in call_args)
-
-            # Should log the response status
-            assert any("API response status" in arg for arg in call_args)

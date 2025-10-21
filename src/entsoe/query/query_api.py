@@ -6,6 +6,7 @@ from xsdata_pydantic.bindings import XmlParser
 from ..config.config import get_config
 from ..utils.utils import extract_namespace_and_find_classes
 from .decorators import (
+    acknowledgement_unexpected_error,
     acknowledgement,
     pagination,
     range_limited,
@@ -15,8 +16,9 @@ from .decorators import (
 )
 
 
-@unzip
 @retry
+@acknowledgement_unexpected_error
+@unzip
 @service_unavailable
 def query_core(params: dict) -> list[Response]:
     """

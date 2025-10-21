@@ -6,9 +6,14 @@ import zipfile
 from httpx import RequestError, Response
 from loguru import logger
 from pydantic import BaseModel
+from xsdata_pydantic.bindings import XmlParser
 
 from ..config.config import get_config
-from ..utils.utils import check_date_range_limit, split_date_range
+from ..utils.utils import (
+    check_date_range_limit,
+    split_date_range,
+    extract_namespace_and_find_classes,
+)
 
 
 class AcknowledgementDocumentError(Exception):
@@ -19,6 +24,11 @@ class AcknowledgementDocumentError(Exception):
 
 class ServiceUnavailableError(Exception):
     """Raised when the ENTSO-E API returns a 503 Service Unavailable status."""
+
+    pass
+
+class UnexpectedError(Exception):
+    """Raised when the ENTSO-E API returns an unexpected error."""
 
     pass
 
@@ -285,6 +295,50 @@ def service_unavailable(func):
     return service_unavailable_wrapper
 
 
+def acknowledgement_unexpected_error(func):
+    """
+    Decorator that inspects responses for acknowledgement documents that indicate
+    transient server-side failures like "Unexpected error occurred".
+
+    It parses each response's XML root using extract_namespace_and_find_classes.
+    If the document is an AcknowledgementMarketDocument and any reason text
+    contains "Unexpected error occurred", it raises ServiceUnavailableError so
+    the retry wrapper can re-attempt the request.
+
+    Returns:
+        The original list of Response objects when no transient error is detected.
+    """
+
+    @wraps(func)
+    def ack_unexpected_wrapper(*args, **kwargs) -> list[Response]:
+        logger.debug(
+            "acknowledgement_unexpected_error decorator called for function: {}",
+            func.__name__,
+        )
+
+        responses: list[Response] = func(*args, **kwargs)
+
+        for idx, response in enumerate(responses):
+
+            name, matching_class = extract_namespace_and_find_classes(response)
+
+            if name and "acknowledgementmarketdocument" in name.lower():
+                logger.debug(
+                    f"Response {idx} is an AcknowledgementMarketDocument; parsing reasons"
+                )
+                xml_model = XmlParser().from_string(response.text, matching_class)
+                reason = xml_model.reason[0].text
+
+                if "unexpected error occurred" in reason.lower():
+                    # Raise immediately so @retry will catch and retry
+                    logger.error(reason)
+                    raise UnexpectedError(reason)
+
+        return responses
+
+    return ack_unexpected_wrapper
+
+
 def retry(func):
     """
     Decorator that catches connection errors, service unavailable errors, waits and retries.
@@ -304,7 +358,7 @@ def retry(func):
                 result = func(*args, **kwargs)
                 return result
             # Catch connection errors, socket errors, and service unavailable errors
-            except (RequestError, ServiceUnavailableError) as e:
+            except (RequestError, ServiceUnavailableError, UnexpectedError) as e:
                 last_exception = e
                 logger.warning(
                     f"Connection Error on attempt {attempt + 1}/{config.retries}: "
