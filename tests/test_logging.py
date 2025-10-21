@@ -1,10 +1,13 @@
 """Test module for verifying debug logging functionality."""
-import pytest
+
 from unittest.mock import Mock, patch
 
+import pytest
+
+from entsoe.config import get_config
 from entsoe.query.query_api import query_core
 from entsoe.utils.utils import check_date_range_limit, split_date_range
-from entsoe.config import get_config
+
 
 @pytest.mark.skipif(
     get_config().security_token is None,
