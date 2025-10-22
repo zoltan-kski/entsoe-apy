@@ -103,6 +103,10 @@ def split_date_range(func):
     splits the requested period into two halves, makes recursive calls for each half,
     and combines the results into a single list of BaseModel instances.
 
+    For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
+    - The 1-year limit applies to periodStartUpdate/periodEndUpdate
+    - periodStart/periodEnd can exceed 1 year
+
     Returns:
         List of BaseModel instances from all time periods combined.
     """
@@ -112,36 +116,57 @@ def split_date_range(func):
         # Extract period parameters from params dict
         period_start = params.get("periodStart")
         period_end = params.get("periodEnd")
+        period_start_update = params.get("periodStartUpdate")
+        period_end_update = params.get("periodEndUpdate")
 
-        # If no period parameters, just call the function normally
-        if period_start is None or period_end is None:
+        # Determine which parameters to use for range checking
+        # For outages endpoints: if update parameters are present, use them
+        # Otherwise, use regular period parameters
+        if period_start_update is not None and period_end_update is not None:
+            # Use update parameters for range checking (outages endpoints)
+            check_start = period_start_update
+            check_end = period_end_update
+            split_param_start = "periodStartUpdate"
+            split_param_end = "periodEndUpdate"
+            logger.debug(
+                "Using update parameters for range checking (outages endpoint)"
+            )
+        elif period_start is not None and period_end is not None:
+            # Use regular period parameters for range checking
+            check_start = period_start
+            check_end = period_end
+            split_param_start = "periodStart"
+            split_param_end = "periodEnd"
+            logger.debug("Using period parameters for range checking")
+        else:
+            # No valid date range to check, proceed with the call
             return func(params, max_days_limit, *args, **kwargs)
 
         # Check if the range exceeds the limit
-        if check_date_range_limit(period_start, period_end, max_days=max_days_limit):
+        if check_date_range_limit(check_start, check_end, max_days=max_days_limit):
             logger.debug(
-                f"Splitting date range {period_start} to {period_end} "
+                f"Splitting date range {check_start} to {check_end} "
                 f"(exceeds {max_days_limit} day limit)"
             )
 
             # Split the range and make recursive calls
             pivot_date = split_date_range_util(
-                period_start, period_end, max_days=max_days_limit
+                check_start, check_end, max_days=max_days_limit
             )
             logger.debug(f"Split at pivot date: {pivot_date}")
 
             # Create new params for the first half
             params1 = params.copy()
-            params1["periodEnd"] = pivot_date
+            params1[split_param_end] = pivot_date
             logger.debug(
-                f"First half: {params1['periodStart']} to {params1['periodEnd']}"
+                f"First half: {params1[split_param_start]} to {params1[split_param_end]}"
             )
 
             # Create new params for the second half
             params2 = params.copy()
-            params2["periodStart"] = pivot_date
+            params2[split_param_start] = pivot_date
             logger.debug(
-                f"Second half: {params2['periodStart']} to {params2['periodEnd']}"
+                f"Second half: {params2[split_param_start]} to {params2[split_param_end]}"
             )
 
             # Recursively call for both halves
