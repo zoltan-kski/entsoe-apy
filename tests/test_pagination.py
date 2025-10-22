@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from entsoe.Base.Balancing import Balancing
 from entsoe.Base.Market import Market
 from entsoe.Base.Outages import Outages
-from entsoe.query.decorators import pagination
+from entsoe.query.decorators import pagination, set_query_context
 
 
 class TestPaginationOffsetIncrement:
@@ -54,7 +54,8 @@ class TestPaginationOffsetIncrement:
         mock_func.side_effect = side_effect
 
         # Call the decorated function with offset_increment=100
-        decorated_func(params, offset_increment=100)
+        with set_query_context(offset_increment=100):
+            decorated_func(params)
 
         # Verify the function was called with offset=0
         assert mock_func.call_count == 2  # First call returns data, second returns empty
@@ -82,7 +83,8 @@ class TestPaginationOffsetIncrement:
         mock_func.side_effect = side_effect
 
         # Call the decorated function with offset_increment=200
-        decorated_func(params, offset_increment=200)
+        with set_query_context(offset_increment=200):
+            decorated_func(params)
 
         # Verify the function was called with increasing offsets
         assert mock_func.call_count == 3  # Two calls with data, one empty
@@ -97,7 +99,8 @@ class TestPaginationOffsetIncrement:
         # Params without offset
         params = {"documentType": "A25"}
 
-        decorated_func(params, offset_increment=100)
+        with set_query_context(offset_increment=100):
+            decorated_func(params)
 
         # Should call the function once without pagination
         assert mock_func.call_count == 1
@@ -124,12 +127,12 @@ class TestPaginationOffsetIncrement:
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
             
-            # Capture the actual call to verify offset_increment
-            query_api(
-                outages.params,
+            # Use the context manager to set the configuration
+            with set_query_context(
                 max_days_limit=outages.max_days_limit,
                 offset_increment=outages.offset_increment,
-            )
+            ):
+                query_api(outages.params)
             
             # The function should have been called
             assert mock_query_parse.called
@@ -156,12 +159,12 @@ class TestPaginationOffsetIncrement:
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
             
-            # Capture the actual call to verify offset_increment
-            query_api(
-                market.params,
+            # Use the context manager to set the configuration
+            with set_query_context(
                 max_days_limit=market.max_days_limit,
                 offset_increment=market.offset_increment,
-            )
+            ):
+                query_api(market.params)
             
             # The function should have been called
             assert mock_query_parse.called
@@ -176,7 +179,8 @@ class TestPaginationOffsetIncrement:
         # Mock to always return data (to test we stop at 4800)
         mock_func.return_value = [{"data": "test"}]
 
-        decorated_func(params, offset_increment=100)
+        with set_query_context(offset_increment=100):
+            decorated_func(params)
 
         # Should have been called 49 times (0, 100, 200, ..., 4700, 4800)
         assert mock_func.call_count == 49
@@ -193,7 +197,8 @@ class TestPaginationOffsetIncrement:
         # Mock to always return data (to test we stop at 4800)
         mock_func.return_value = [{"data": "test"}]
 
-        decorated_func(params, offset_increment=200)
+        with set_query_context(offset_increment=200):
+            decorated_func(params)
 
         # Should have been called 25 times (0, 200, 400, ..., 4600, 4800)
         assert mock_func.call_count == 25

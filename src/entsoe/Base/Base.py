@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
-from ..query.query_api import query_api
+from ..query.query_api import query_api, set_query_context
 from ..utils.mappings_dict import mappings
 
 
@@ -279,9 +279,9 @@ class Base:
             periods or when the API returns multiple documents in response to
             a single request. Each model preserves its associated metadata.
         """
-        response = query_api(
-            self.params,
+        with set_query_context(
             max_days_limit=self.max_days_limit,
             offset_increment=self.offset_increment,
-        )
+        ):
+            response = query_api(self.params)
         return response
