@@ -10,7 +10,7 @@ from .decorators import (
     handle_acknowledgement,
     pagination,
     retry,
-    split_date_range_decorator,
+    split_date_range,
     unzip,
 )
 
@@ -140,7 +140,7 @@ def query_and_parse(params: dict) -> list[BaseModel]:
 
 
 # Order matters! First handle range-limits, second handle pagination
-@split_date_range_decorator
+@split_date_range
 @pagination
 def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseModel]:
     """
@@ -163,7 +163,7 @@ def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseMod
 
     Note:
         The order of decorators is important:
-        1. @split_date_range_decorator: Splits queries that exceed date range limits
+        1. @split_date_range: Splits queries that exceed date range limits
         2. @pagination: Handles offset-based pagination for large result sets
     """
     logger.debug("Starting query_api")

@@ -95,7 +95,7 @@ def unzip(func):
     return unzip_wrapper
 
 
-def split_date_range_decorator(func):
+def split_date_range(func):
     """
     Decorator that automatically splits large date ranges into smaller chunks.
 
