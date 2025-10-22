@@ -96,14 +96,13 @@ def unzip(func):
     return unzip_wrapper
 
 
-def range_limited(func):
+def split_date_range_decorator(func):
     """
-    Decorator that handles range limit errors by splitting the requested period
-    and combining the results.
+    Decorator that automatically splits large date ranges into smaller chunks.
 
-    Catches cases where the date range exceeds the API's 1-year limit, splits
-    the requested period in two, and makes recursive calls. The results from
-    both halves are combined into a single list of BaseModel instances.
+    When a date range exceeds the specified limit (default 365 days), this decorator
+    splits the requested period into two halves, makes recursive calls for each half,
+    and combines the results into a single list of BaseModel instances.
 
     Returns:
         List of BaseModel instances from all time periods combined.
@@ -165,20 +164,22 @@ def range_limited(func):
     return range_wrapper
 
 
-def acknowledgement(func):
+def handle_acknowledgement(func):
     """
     Decorator that handles acknowledgement documents from the ENTSO-E API.
 
     Checks if the API response contains an acknowledgement document indicating
     an error or "No matching data found" condition. Returns None for "No matching
-    data found" cases, or raises an AcknowledgementDocumentError for other error
+    data found" cases, raises UnexpectedError for transient server errors that
+    should be retried, or raises AcknowledgementDocumentError for other error
     conditions.
 
     Returns:
         The original BaseModel instance, or None if no data was found.
 
     Raises:
-        AcknowledgementDocumentError: For acknowledgement documents containing errors
+        UnexpectedError: For transient "unexpected error occurred" messages (triggers retry)
+        AcknowledgementDocumentError: For other acknowledgement documents containing errors
     """
 
     @wraps(func)
@@ -262,22 +263,22 @@ def pagination(func):
     return pagination_wrapper
 
 
-def service_unavailable(func):
+def check_service_unavailable(func):
     """
-    Decorator that handles 503 Service Unavailable responses from the ENTSO-E API.
+    Decorator that checks for 503 Service Unavailable responses from the ENTSO-E API.
 
-    Checks if any response in the returned list has a 503 status code, logs an error,
-    and raises a ServiceUnavailableError with details about the service status.
+    Inspects the HTTP response status code and raises a ServiceUnavailableError
+    if a 503 status is detected, which triggers the retry mechanism.
 
     Returns:
-        The original list of Response objects if no 503 responses are found.
+        The original Response object if no 503 status is found.
 
     Raises:
-        ServiceUnavailableError: When any response has a 503 Service Unavailable status
+        ServiceUnavailableError: When the response has a 503 Service Unavailable status
     """
 
     @wraps(func)
-    def service_unavailable_wrapper(*args, **kwargs) -> list[Response]:
+    def service_unavailable_wrapper(*args, **kwargs) -> Response:
         logger.debug(
             "service_unavailable decorator called for function: {}", func.__name__
         )

@@ -6,16 +6,16 @@ from xsdata_pydantic.bindings import XmlParser
 from ..config.config import get_config
 from ..utils.utils import extract_namespace_and_find_classes
 from .decorators import (
-    acknowledgement,
+    check_service_unavailable,
+    handle_acknowledgement,
     pagination,
-    range_limited,
     retry,
-    service_unavailable,
+    split_date_range_decorator,
     unzip,
 )
 
 
-@service_unavailable
+@check_service_unavailable
 def query_core(params: dict) -> Response:
     """
     Core function to make HTTP requests to the ENTSO-E API.
@@ -74,7 +74,7 @@ def fetch_responses(params: dict) -> list[Response]:
     return [response]
 
 
-@acknowledgement
+@handle_acknowledgement
 def parse_response(response: Response) -> BaseModel | None:
     """
     Parse a single HTTP response into a Pydantic BaseModel instance.
@@ -140,7 +140,7 @@ def query_and_parse(params: dict) -> list[BaseModel]:
 
 
 # Order matters! First handle range-limits, second handle pagination
-@range_limited
+@split_date_range_decorator
 @pagination
 def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseModel]:
     """
@@ -163,7 +163,7 @@ def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseMod
 
     Note:
         The order of decorators is important:
-        1. @range_limited: Splits queries that exceed date range limits
+        1. @split_date_range_decorator: Splits queries that exceed date range limits
         2. @pagination: Handles offset-based pagination for large result sets
     """
     logger.debug("Starting query_api")
