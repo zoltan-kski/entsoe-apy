@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from ..config.config import get_config
 from ..utils.utils import (
     check_date_range_limit,
-    split_date_range,
+    split_date_range as split_date_range_util,
 )
 
 
@@ -125,7 +125,7 @@ def split_date_range(func):
             )
 
             # Split the range and make recursive calls
-            pivot_date = split_date_range(
+            pivot_date = split_date_range_util(
                 period_start, period_end, max_days=max_days_limit
             )
             logger.debug(f"Split at pivot date: {pivot_date}")
