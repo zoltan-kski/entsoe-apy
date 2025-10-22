@@ -200,12 +200,12 @@ def handle_acknowledgement(func):
                 logger.debug(reason)
                 logger.debug("Returning None")
                 return None
-            elif "unexpected error occurred" in reason.lower():
+            elif "Unexpected error occurred." in reason:
                 logger.error(reason)
                 raise UnexpectedError(reason)
             else:
                 logger.error(reason)
-                raise AcknowledgementDocumentError(xml_model.reason)
+                raise AcknowledgementDocumentError(reason)
 
         logger.debug("Acknowledgement check passed, returning xml_model")
         return xml_model
