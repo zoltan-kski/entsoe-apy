@@ -189,7 +189,7 @@ def handle_acknowledgement(func):
             if "No matching data found" in reason:
                 logger.debug("No matching data found, returning None")
                 return None
-            elif "Unexpected error occurred." in reason:
+            elif "Unexpected error occurred" in reason:
                 logger.error(f"Unexpected error in acknowledgement: {reason}")
                 raise UnexpectedError(reason)
             else:
