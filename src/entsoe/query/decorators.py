@@ -8,7 +8,10 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ..config.config import get_config
-from ..utils.utils import check_date_range_limit, split_date_range
+from ..utils.utils import (
+    check_date_range_limit,
+    split_date_range,
+)
 
 
 class AcknowledgementDocumentError(Exception):
@@ -19,6 +22,12 @@ class AcknowledgementDocumentError(Exception):
 
 class ServiceUnavailableError(Exception):
     """Raised when the ENTSO-E API returns a 503 Service Unavailable status."""
+
+    pass
+
+
+class UnexpectedError(Exception):
+    """Raised when the ENTSO-E API returns an unexpected error."""
 
     pass
 
@@ -80,21 +89,19 @@ def unzip(func):
                     )
 
                 return responses
-        else:
-            logger.debug("Response is not ZIP returning original response")
-            return response_list
+
+        return response_list
 
     return unzip_wrapper
 
 
-def range_limited(func):
+def split_date_range_decorator(func):
     """
-    Decorator that handles range limit errors by splitting the requested period
-    and combining the results.
+    Decorator that automatically splits large date ranges into smaller chunks.
 
-    Catches cases where the date range exceeds the API's 1-year limit, splits
-    the requested period in two, and makes recursive calls. The results from
-    both halves are combined into a single list of BaseModel instances.
+    When a date range exceeds the specified limit (default 365 days), this decorator
+    splits the requested period into two halves, makes recursive calls for each half,
+    and combines the results into a single list of BaseModel instances.
 
     Returns:
         List of BaseModel instances from all time periods combined.
@@ -108,16 +115,14 @@ def range_limited(func):
 
         # If no period parameters, just call the function normally
         if period_start is None or period_end is None:
-            logger.debug("No period parameters found, calling function directly")
             return func(params, max_days_limit, *args, **kwargs)
-
-        logger.debug(f"Range_limited decorator called for function: {func.__name__}")
-        logger.debug(f"Period range: {period_start} to {period_end}")
-        logger.debug(f"Using max_days_limit: {max_days_limit}")
 
         # Check if the range exceeds the limit
         if check_date_range_limit(period_start, period_end, max_days=max_days_limit):
-            logger.debug(f"Range exceeds {max_days_limit} days, splitting range")
+            logger.debug(
+                f"Splitting date range {period_start} to {period_end} "
+                f"(exceeds {max_days_limit} day limit)"
+            )
 
             # Split the range and make recursive calls
             pivot_date = split_date_range(
@@ -140,62 +145,57 @@ def range_limited(func):
             )
 
             # Recursively call for both halves
-            logger.debug("Making recursive call for first half")
             result1 = range_wrapper(params1, max_days_limit, *args, **kwargs)
-            logger.debug("Making recursive call for second half")
             result2 = range_wrapper(params2, max_days_limit, *args, **kwargs)
 
-            logger.debug("Merging results from both halves")
+            logger.debug(
+                f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
+            )
             return [*result1, *result2]
 
-        else:
-            # Range is within limit, make the API call
-            logger.debug(f"Range within {max_days_limit} days, making API call")
-            return func(params, max_days_limit, *args, **kwargs)
+        # Range is within limit, make the API call
+        return func(params, max_days_limit, *args, **kwargs)
 
     return range_wrapper
 
 
-def acknowledgement(func):
+def handle_acknowledgement(func):
     """
     Decorator that handles acknowledgement documents from the ENTSO-E API.
 
     Checks if the API response contains an acknowledgement document indicating
     an error or "No matching data found" condition. Returns None for "No matching
-    data found" cases, or raises an AcknowledgementDocumentError for other error
+    data found" cases, raises UnexpectedError for transient server errors that
+    should be retried, or raises AcknowledgementDocumentError for other error
     conditions.
 
     Returns:
         The original BaseModel instance, or None if no data was found.
 
     Raises:
-        AcknowledgementDocumentError: For acknowledgement documents containing errors
+        UnexpectedError: For transient "unexpected error occurred" messages (triggers retry)
+        AcknowledgementDocumentError: For other acknowledgement documents containing errors
     """
 
     @wraps(func)
     def ack_wrapper(params, *args, **kwargs) -> BaseModel | None:
-        logger.debug(f"acknowledgement decorator called for function: {func.__name__}")
-
         xml_model = func(params, *args, **kwargs)
         name = type(xml_model).__name__
 
-        logger.debug(f"Received response with name: {name}")
-
         if "acknowledgementmarketdocument" in name.lower():
-            logger.debug("Response contains acknowledgement document")
+            logger.debug(f"Response is acknowledgement document: {name}")
             reason = xml_model.reason[0].text
-            logger.debug(f"Acknowledgement reason: {reason}")
 
             if "No matching data found" in reason:
-                logger.debug(reason)
-                logger.debug("Returning None")
+                logger.debug("No matching data found, returning None")
                 return None
+            elif "Unexpected error occurred" in reason:
+                logger.error(f"Unexpected error in acknowledgement: {reason}")
+                raise UnexpectedError(reason)
             else:
-                for reason in xml_model.reason:
-                    logger.error(reason.text)
-                raise AcknowledgementDocumentError(xml_model.reason)
+                logger.error(f"Acknowledgement error: {reason}")
+                raise AcknowledgementDocumentError(reason)
 
-        logger.debug("Acknowledgement check passed, returning xml_model")
         return xml_model
 
     return ack_wrapper
@@ -216,11 +216,8 @@ def pagination(func):
 
     @wraps(func)
     def pagination_wrapper(params, *args, **kwargs):
-        logger.debug(f"pagination decorator called for function: {func.__name__}")
-
         # Check if offset is in params (indicating pagination may be needed)
         if "offset" not in params:
-            logger.debug("No offset parameter found, calling function directly")
             return func(params, *args, **kwargs)
 
         logger.debug("Offset parameter found, starting pagination")
@@ -228,20 +225,16 @@ def pagination(func):
         merged_result = []
 
         for offset in range(0, 4801, 100):  # 0 to 4800 in increments of 100
-            logger.debug(f"Processing pagination offset: {offset}")
             params["offset"] = offset
 
             result = func(params, *args, **kwargs)
 
             if not result:
-                logger.debug("Received empty result, pagination complete")
+                logger.debug(f"Pagination complete at offset {offset}, no more results")
                 break
 
             # Add results to accumulated list
             merged_result.extend(result)
-            logger.debug(
-                f"Added {len(result)} results, total accumulated: {len(merged_result)}"
-            )
 
         logger.debug(
             f"Pagination completed, returning {len(merged_result)} total results"
@@ -251,36 +244,30 @@ def pagination(func):
     return pagination_wrapper
 
 
-def service_unavailable(func):
+def check_service_unavailable(func):
     """
-    Decorator that handles 503 Service Unavailable responses from the ENTSO-E API.
+    Decorator that checks for 503 Service Unavailable responses from the ENTSO-E API.
 
-    Checks if any response in the returned list has a 503 status code, logs an error,
-    and raises a ServiceUnavailableError with details about the service status.
+    Inspects the HTTP response status code and raises a ServiceUnavailableError
+    if a 503 status is detected, which triggers the retry mechanism.
 
     Returns:
-        The original list of Response objects if no 503 responses are found.
+        The original Response object if no 503 status is found.
 
     Raises:
-        ServiceUnavailableError: When any response has a 503 Service Unavailable status
+        ServiceUnavailableError: When the response has a 503 Service Unavailable status
     """
 
     @wraps(func)
-    def service_unavailable_wrapper(*args, **kwargs) -> list[Response]:
-        logger.debug(
-            "service_unavailable decorator called for function: {}", func.__name__
-        )
+    def service_unavailable_wrapper(*args, **kwargs) -> Response:
+        response = func(*args, **kwargs)
 
-        # Call the original function to get the list of responses
-        response_list = func(*args, **kwargs)
+        # Check response for 503 status
+        if response.status_code == 503:
+            logger.error("ENTSO-E API returned 503 Service Unavailable")
+            raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
 
-        # Check each response for 503 status
-        for response in response_list:
-            if response.status_code == 503:
-                raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
-
-        logger.debug("No 503 Service Unavailable responses found")
-        return response_list
+        return response
 
     return service_unavailable_wrapper
 
@@ -304,7 +291,7 @@ def retry(func):
                 result = func(*args, **kwargs)
                 return result
             # Catch connection errors, socket errors, and service unavailable errors
-            except (RequestError, ServiceUnavailableError) as e:
+            except (RequestError, ServiceUnavailableError, UnexpectedError) as e:
                 last_exception = e
                 logger.warning(
                     f"Connection Error on attempt {attempt + 1}/{config.retries}: "

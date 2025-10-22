@@ -6,25 +6,22 @@ from xsdata_pydantic.bindings import XmlParser
 from ..config.config import get_config
 from ..utils.utils import extract_namespace_and_find_classes
 from .decorators import (
-    acknowledgement,
+    check_service_unavailable,
+    handle_acknowledgement,
     pagination,
-    range_limited,
     retry,
-    service_unavailable,
+    split_date_range_decorator,
     unzip,
 )
 
 
-@unzip
-@retry
-@service_unavailable
-def query_core(params: dict) -> list[Response]:
+@check_service_unavailable
+def query_core(params: dict) -> Response:
     """
     Core function to make HTTP requests to the ENTSO-E API.
 
-    This function handles the basic HTTP request with authentication and timeout.
-    It's decorated with unzip and retry decorators to handle ZIP responses and
-    connection failures respectively.
+    Performs a basic HTTP GET request with authentication and timeout handling and checks for service unavailability.
+    This is the lowest-level function that directly communicates with the API.
 
     Args:
         params: Dictionary of query parameters for the API request
@@ -55,24 +52,44 @@ def query_core(params: dict) -> list[Response]:
         f"API response status: {response.status_code}, content length: {content_length}"
     )
 
+    return response
+
+
+@unzip
+def fetch_responses(params: dict) -> list[Response]:
+    """
+    Fetch responses from the ENTSO-E API with unzipping and error handling.
+
+    Makes the HTTP request via query_core and automatically unzips ZIP responses into individual Response objects.
+
+    Args:
+        params: Dictionary of query parameters for the API request
+
+    Returns:
+        List of Response objects. Multiple responses are returned when the API
+        returns a ZIP file containing multiple XML documents.
+    """
+    logger.debug("Fetching responses from API")
+    response = query_core(params)
     return [response]
 
 
-@acknowledgement
-def parse_response(response) -> BaseModel:
+@handle_acknowledgement
+def parse_response(response: Response) -> BaseModel | None:
     """
-    Parse an HTTP response into a Pydantic BaseModel.
+    Parse a single HTTP response into a Pydantic BaseModel instance.
 
-    This function extracts the namespace and matching XML class from the response,
-    then uses XmlParser to convert the XML content into a strongly-typed Pydantic model.
-    The acknowledgement decorator handles error responses and 'No matching data found' cases.
+    Extracts the XML namespace and matching class from the response,
+    then uses XmlParser to convert the XML content into a strongly-typed
+    Pydantic model. The handle_acknowledgement decorator handles error responses
+    and 'No matching data found' cases.
 
     Args:
-        response: HTTP Response object containing XML data from the ENTSO-E API
+        response: HTTP Response object containing XML data
 
     Returns:
-        Pydantic BaseModel instance representing the parsed XML data.
-        Returns None if the response contains an acknowledgement indicating no data found.
+        Pydantic BaseModel instance representing the parsed XML data,
+        or None if the response is an acknowledgement with no matching data.
     """
     logger.debug(f"Parsing response with status {response.status_code}")
 
@@ -88,17 +105,50 @@ def parse_response(response) -> BaseModel:
     return xml_model
 
 
+@retry
+def query_and_parse(params: dict) -> list[BaseModel]:
+    """
+    Query the API and parse responses with retry and error handling.
+
+    This function orchestrates fetching responses from the API and parsing them
+    into Pydantic models. It includes retry logic for transient failures and
+    checks for unexpected errors in acknowledgement documents.
+
+    Args:
+        params: Dictionary of query parameters for the API request
+
+    Returns:
+        List of Pydantic BaseModel instances representing the parsed data.
+        Filters out None values from acknowledgements with no matching data.
+    """
+    logger.debug("Starting query_and_parse")
+
+    responses = fetch_responses(params)
+
+    logger.debug(f"Received {len(responses)} response(s), parsing each")
+
+    # Parse each response and filter out None results (from "no matching data" acknowledgements)
+    results = [
+        parsed
+        for response in responses
+        if (parsed := parse_response(response)) is not None
+    ]
+
+    logger.debug(f"query_and_parse completed, returning {len(results)} results")
+
+    return results
+
+
 # Order matters! First handle range-limits, second handle pagination
-@range_limited
+@split_date_range_decorator
 @pagination
 def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseModel]:
     """
     Main API query function that orchestrates the complete query process.
 
-    This function coordinates the entire API query workflow: making HTTP requests,
-    parsing responses into Pydantic models, and handling various edge cases like
-    date range limits and pagination. The decorators handle automatic splitting
-    of large date ranges and pagination of results.
+    This is the primary entry point for querying the ENTSO-E API. It handles
+    the complete workflow including HTTP requests, response parsing, retry logic,
+    date range splitting, and pagination.
 
     Args:
         params: Dictionary of string parameters for the ENTSO-E API query
@@ -113,18 +163,13 @@ def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseMod
 
     Note:
         The order of decorators is important:
-        1. @range_limited: Splits queries that exceed date range limits
+        1. @split_date_range_decorator: Splits queries that exceed date range limits
         2. @pagination: Handles offset-based pagination for large result sets
     """
-    logger.debug("Starting query_api by calling query_core.")
+    logger.debug("Starting query_api")
 
-    responses = query_core(params)
-    results = [
-        result
-        for response in responses
-        if (result := parse_response(response)) is not None
-    ]
+    results = query_and_parse(params)
 
-    logger.debug(f"query_api completed successfully, returning {len(results)} results.")
+    logger.debug(f"query_api completed successfully, returning {len(results)} results")
 
     return results

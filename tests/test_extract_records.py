@@ -12,9 +12,9 @@ from entsoe.utils import extract_records
     reason="ENTSOE_API environment variable not set",
 )
 def test_extract_records():
-    EIC = "10Y1001A1001A82H"
-    period_start = 202012312300
-    period_end = 202101022300
+    EIC = "10YNL----------L"
+    period_start = 202001010000
+    period_end = 202001030000
     result = EnergyPrices(
         in_domain=EIC,
         out_domain=EIC,
