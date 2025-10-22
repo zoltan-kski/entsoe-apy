@@ -20,6 +20,11 @@ class Base:
     # Maximum days for date range queries (can be overridden by subclasses)
     max_days_limit: int = 365
 
+    # Number of documents returned per offset increment (can be overridden by subclasses)
+    # Default: 100 (used by Market, Balancing groups)
+    # Outages group uses 200
+    offset_increment: int = 100
+
     def __init__(
         self,
         document_type: str,
@@ -274,5 +279,9 @@ class Base:
             periods or when the API returns multiple documents in response to
             a single request. Each model preserves its associated metadata.
         """
-        response = query_api(self.params, max_days_limit=self.max_days_limit)
+        response = query_api(
+            self.params,
+            max_days_limit=self.max_days_limit,
+            offset_increment=self.offset_increment,
+        )
         return response
