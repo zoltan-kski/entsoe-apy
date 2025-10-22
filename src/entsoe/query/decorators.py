@@ -201,9 +201,11 @@ def acknowledgement(func):
                 logger.debug(reason)
                 logger.debug("Returning None")
                 return None
+            elif "unexpected error occurred" in reason.lower():
+                logger.error(reason)
+                raise UnexpectedError(reason)
             else:
-                for reason in xml_model.reason:
-                    logger.error(reason.text)
+                logger.error(reason)
                 raise AcknowledgementDocumentError(xml_model.reason)
 
         logger.debug("Acknowledgement check passed, returning xml_model")
@@ -283,60 +285,16 @@ def service_unavailable(func):
         )
 
         # Call the original function to get the list of responses
-        response_list = func(*args, **kwargs)
+        response = func(*args, **kwargs)
 
-        # Check each response for 503 status
-        for response in response_list:
-            if response.status_code == 503:
-                raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
-
-        logger.debug("No 503 Service Unavailable responses found")
-        return response_list
+        # Check response for 503 status
+        if response.status_code == 503:
+            raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
+        else:
+            logger.debug("No 503 Service Unavailable responses found")
+            return response
 
     return service_unavailable_wrapper
-
-
-def acknowledgement_unexpected_error(func):
-    """
-    Decorator that inspects responses for acknowledgement documents that indicate
-    transient server-side failures like "Unexpected error occurred".
-
-    It parses each response's XML root using extract_namespace_and_find_classes.
-    If the document is an AcknowledgementMarketDocument and any reason text
-    contains "Unexpected error occurred", it raises ServiceUnavailableError so
-    the retry wrapper can re-attempt the request.
-
-    Returns:
-        The original list of Response objects when no transient error is detected.
-    """
-
-    @wraps(func)
-    def ack_unexpected_wrapper(*args, **kwargs) -> list[Response]:
-        logger.debug(
-            "acknowledgement_unexpected_error decorator called for function: {}",
-            func.__name__,
-        )
-
-        responses: list[Response] = func(*args, **kwargs)
-
-        for idx, response in enumerate(responses):
-            name, matching_class = extract_namespace_and_find_classes(response)
-
-            if name and "acknowledgementmarketdocument" in name.lower():
-                logger.debug(
-                    f"Response {idx} is an AcknowledgementMarketDocument; parsing reasons"
-                )
-                xml_model = XmlParser().from_string(response.text, matching_class)
-                reason = xml_model.reason[0].text
-
-                if "unexpected error occurred" in reason.lower():
-                    # Raise immediately so @retry will catch and retry
-                    logger.error(reason)
-                    raise UnexpectedError(reason)
-
-        return responses
-
-    return ack_unexpected_wrapper
 
 
 def retry(func):
