@@ -10,7 +10,6 @@ from .decorators import (
     handle_acknowledgement,
     pagination,
     retry,
-    set_query_context,
     split_date_range,
     unzip,
 )
@@ -150,7 +149,7 @@ def query_api(params: dict[str, str]) -> list[BaseModel]:
     This is the primary entry point for querying the ENTSO-E API. It handles
     the complete workflow including HTTP requests, response parsing, retry logic,
     date range splitting, and pagination.
-    
+
     Configuration for decorators (max_days_limit and offset_increment) is provided
     via the set_query_context context manager from the calling code.
 

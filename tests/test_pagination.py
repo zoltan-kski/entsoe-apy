@@ -58,7 +58,9 @@ class TestPaginationOffsetIncrement:
             decorated_func(params)
 
         # Verify the function was called with offset=0
-        assert mock_func.call_count == 2  # First call returns data, second returns empty
+        assert (
+            mock_func.call_count == 2
+        )  # First call returns data, second returns empty
         # Verify the offset was set correctly in the params
         assert params["offset"] == 100  # Last offset value
 
@@ -122,18 +124,18 @@ class TestPaginationOffsetIncrement:
         # Mock the entire query_api call chain
         with patch("entsoe.query.query_api.query_and_parse") as mock_query_parse:
             mock_query_parse.return_value = []
-            
+
             # Since we're patching deeper, we can directly verify the parameters
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
-            
+
             # Use the context manager to set the configuration
             with set_query_context(
                 max_days_limit=outages.max_days_limit,
                 offset_increment=outages.offset_increment,
             ):
                 query_api(outages.params)
-            
+
             # The function should have been called
             assert mock_query_parse.called
 
@@ -154,18 +156,18 @@ class TestPaginationOffsetIncrement:
         # Mock the entire query_api call chain
         with patch("entsoe.query.query_api.query_and_parse") as mock_query_parse:
             mock_query_parse.return_value = []
-            
+
             # Since we're patching deeper, we can directly verify the parameters
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
-            
+
             # Use the context manager to set the configuration
             with set_query_context(
                 max_days_limit=market.max_days_limit,
                 offset_increment=market.offset_increment,
             ):
                 query_api(market.params)
-            
+
             # The function should have been called
             assert mock_query_parse.called
 

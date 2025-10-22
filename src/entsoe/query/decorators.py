@@ -24,14 +24,14 @@ _offset_increment: ContextVar[int] = ContextVar("offset_increment", default=100)
 def set_query_context(max_days_limit: int = 365, offset_increment: int = 100):
     """
     Context manager to set configuration values for query decorators.
-    
+
     This allows decorators to access max_days_limit and offset_increment values
     without passing them through the function signature.
-    
+
     Args:
         max_days_limit: Maximum number of days allowed in a single query (default: 365)
         offset_increment: Number of documents returned per offset increment (default: 100)
-        
+
     Example:
         >>> with set_query_context(max_days_limit=180, offset_increment=200):
         ...     result = query_api(params)
@@ -142,7 +142,7 @@ def split_date_range(func):
     def range_wrapper(params, *args, **kwargs):
         # Get max_days_limit from context
         max_days_limit = _max_days_limit.get()
-        
+
         # Extract period parameters from params dict
         period_start = params.get("periodStart")
         period_end = params.get("periodEnd")
@@ -257,7 +257,7 @@ def pagination(func):
 
         # Get offset_increment from context
         offset_increment = _offset_increment.get()
-        
+
         logger.debug(
             f"Offset parameter found, starting pagination with increment={offset_increment}"
         )
