@@ -289,9 +289,9 @@ def check_service_unavailable(func):
         # Check response for 503 status
         if response.status_code == 503:
             raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
-        else:
-            logger.debug("No 503 Service Unavailable responses found")
-            return response
+
+        logger.debug("No 503 Service Unavailable responses found")
+        return response
 
     return service_unavailable_wrapper
 
