@@ -148,7 +148,9 @@ def split_date_range_decorator(func):
             result1 = range_wrapper(params1, max_days_limit, *args, **kwargs)
             result2 = range_wrapper(params2, max_days_limit, *args, **kwargs)
 
-            logger.debug(f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results")
+            logger.debug(
+                f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
+            )
             return [*result1, *result2]
 
         # Range is within limit, make the API call
@@ -185,7 +187,7 @@ def handle_acknowledgement(func):
             reason = xml_model.reason[0].text
 
             if "No matching data found" in reason:
-                logger.debug(f"No matching data found, returning None")
+                logger.debug("No matching data found, returning None")
                 return None
             elif "Unexpected error occurred." in reason:
                 logger.error(f"Unexpected error in acknowledgement: {reason}")
