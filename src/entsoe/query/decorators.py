@@ -6,12 +6,10 @@ import zipfile
 from httpx import RequestError, Response
 from loguru import logger
 from pydantic import BaseModel
-from xsdata_pydantic.bindings import XmlParser
 
 from ..config.config import get_config
 from ..utils.utils import (
     check_date_range_limit,
-    extract_namespace_and_find_classes,
     split_date_range,
 )
 

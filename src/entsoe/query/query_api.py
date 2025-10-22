@@ -73,6 +73,7 @@ def fetch_responses(params: dict) -> list[Response]:
     response = query_core(params)
     return [response]
 
+
 @acknowledgement
 def parse_response(response: Response) -> BaseModel | None:
     """
@@ -80,7 +81,7 @@ def parse_response(response: Response) -> BaseModel | None:
 
     Extracts the XML namespace and matching class from the response,
     then uses XmlParser to convert the XML content into a strongly-typed
-    Pydantic model. The acknowledgement decorator handles error responses 
+    Pydantic model. The acknowledgement decorator handles error responses
     and 'No matching data found' cases.
 
     Args:
@@ -123,13 +124,13 @@ def query_and_parse(params: dict) -> list[BaseModel]:
     logger.debug("Starting query_and_parse")
 
     responses = fetch_responses(params)
-    
+
     logger.debug(f"Received {len(responses)} response(s), parsing each")
 
     # Parse each response and filter out None results (from "no matching data" acknowledgements)
     results = [
-        parsed 
-        for response in responses 
+        parsed
+        for response in responses
         if (parsed := parse_response(response)) is not None
     ]
 
