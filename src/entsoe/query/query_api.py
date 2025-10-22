@@ -81,7 +81,7 @@ def parse_response(response: Response) -> BaseModel | None:
 
     Extracts the XML namespace and matching class from the response,
     then uses XmlParser to convert the XML content into a strongly-typed
-    Pydantic model. The acknowledgement decorator handles error responses
+    Pydantic model. The handle_acknowledgement decorator handles error responses
     and 'No matching data found' cases.
 
     Args:
