@@ -89,9 +89,8 @@ def unzip(func):
                     )
 
                 return responses
-        else:
-            logger.debug("Response is not ZIP returning original response")
-            return response_list
+
+        return response_list
 
     return unzip_wrapper
 
@@ -116,16 +115,14 @@ def split_date_range_decorator(func):
 
         # If no period parameters, just call the function normally
         if period_start is None or period_end is None:
-            logger.debug("No period parameters found, calling function directly")
             return func(params, max_days_limit, *args, **kwargs)
-
-        logger.debug(f"Range_limited decorator called for function: {func.__name__}")
-        logger.debug(f"Period range: {period_start} to {period_end}")
-        logger.debug(f"Using max_days_limit: {max_days_limit}")
 
         # Check if the range exceeds the limit
         if check_date_range_limit(period_start, period_end, max_days=max_days_limit):
-            logger.debug(f"Range exceeds {max_days_limit} days, splitting range")
+            logger.debug(
+                f"Splitting date range {period_start} to {period_end} "
+                f"(exceeds {max_days_limit} day limit)"
+            )
 
             # Split the range and make recursive calls
             pivot_date = split_date_range(
@@ -148,18 +145,14 @@ def split_date_range_decorator(func):
             )
 
             # Recursively call for both halves
-            logger.debug("Making recursive call for first half")
             result1 = range_wrapper(params1, max_days_limit, *args, **kwargs)
-            logger.debug("Making recursive call for second half")
             result2 = range_wrapper(params2, max_days_limit, *args, **kwargs)
 
-            logger.debug("Merging results from both halves")
+            logger.debug(f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results")
             return [*result1, *result2]
 
-        else:
-            # Range is within limit, make the API call
-            logger.debug(f"Range within {max_days_limit} days, making API call")
-            return func(params, max_days_limit, *args, **kwargs)
+        # Range is within limit, make the API call
+        return func(params, max_days_limit, *args, **kwargs)
 
     return range_wrapper
 
@@ -184,30 +177,23 @@ def handle_acknowledgement(func):
 
     @wraps(func)
     def ack_wrapper(params, *args, **kwargs) -> BaseModel | None:
-        logger.debug(f"acknowledgement decorator called for function: {func.__name__}")
-
         xml_model = func(params, *args, **kwargs)
         name = type(xml_model).__name__
 
-        logger.debug(f"Received response with name: {name}")
-
         if "acknowledgementmarketdocument" in name.lower():
-            logger.debug("Response contains acknowledgement document")
+            logger.debug(f"Response is acknowledgement document: {name}")
             reason = xml_model.reason[0].text
-            logger.debug(f"Acknowledgement reason: {reason}")
 
             if "No matching data found" in reason:
-                logger.debug(reason)
-                logger.debug("Returning None")
+                logger.debug(f"No matching data found, returning None")
                 return None
             elif "Unexpected error occurred." in reason:
-                logger.error(reason)
+                logger.error(f"Unexpected error in acknowledgement: {reason}")
                 raise UnexpectedError(reason)
             else:
-                logger.error(reason)
+                logger.error(f"Acknowledgement error: {reason}")
                 raise AcknowledgementDocumentError(reason)
 
-        logger.debug("Acknowledgement check passed, returning xml_model")
         return xml_model
 
     return ack_wrapper
@@ -228,11 +214,8 @@ def pagination(func):
 
     @wraps(func)
     def pagination_wrapper(params, *args, **kwargs):
-        logger.debug(f"pagination decorator called for function: {func.__name__}")
-
         # Check if offset is in params (indicating pagination may be needed)
         if "offset" not in params:
-            logger.debug("No offset parameter found, calling function directly")
             return func(params, *args, **kwargs)
 
         logger.debug("Offset parameter found, starting pagination")
@@ -240,20 +223,16 @@ def pagination(func):
         merged_result = []
 
         for offset in range(0, 4801, 100):  # 0 to 4800 in increments of 100
-            logger.debug(f"Processing pagination offset: {offset}")
             params["offset"] = offset
 
             result = func(params, *args, **kwargs)
 
             if not result:
-                logger.debug("Received empty result, pagination complete")
+                logger.debug(f"Pagination complete at offset {offset}, no more results")
                 break
 
             # Add results to accumulated list
             merged_result.extend(result)
-            logger.debug(
-                f"Added {len(result)} results, total accumulated: {len(merged_result)}"
-            )
 
         logger.debug(
             f"Pagination completed, returning {len(merged_result)} total results"
@@ -279,18 +258,13 @@ def check_service_unavailable(func):
 
     @wraps(func)
     def service_unavailable_wrapper(*args, **kwargs) -> Response:
-        logger.debug(
-            "service_unavailable decorator called for function: {}", func.__name__
-        )
-
-        # Call the original function to get the list of responses
         response = func(*args, **kwargs)
 
         # Check response for 503 status
         if response.status_code == 503:
+            logger.error("ENTSO-E API returned 503 Service Unavailable")
             raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
 
-        logger.debug("No 503 Service Unavailable responses found")
         return response
 
     return service_unavailable_wrapper

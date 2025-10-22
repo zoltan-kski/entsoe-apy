@@ -9,9 +9,9 @@ from entsoe.Market import EnergyPrices
     reason="ENTSOE_API environment variable not set",
 )
 def test_energy_prices():
-    EIC = "10Y1001A1001A82H"
-    period_start = 202012312300
-    period_end = 202101022300
+    EIC = "10YNL----------L"
+    period_start = 202001010000
+    period_end = 202501010000
     object = EnergyPrices(
         in_domain=EIC,
         out_domain=EIC,
