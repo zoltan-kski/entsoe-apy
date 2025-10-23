@@ -22,8 +22,6 @@ class Base:
     max_days_limit: int = 365
 
     # Number of documents returned per offset increment (can be overridden by subclasses)
-    # Default: 100 (used by Market, Balancing groups)
-    # Outages group uses 200
     offset_increment: int = 100
 
     def __init__(

@@ -151,7 +151,8 @@ def query_api(params: dict[str, str]) -> list[BaseModel]:
     date range splitting, and pagination.
 
     Configuration for decorators (max_days_limit and offset_increment) is provided
-    via the set_query_context context manager from the calling code.
+    via ContextVar objects (max_days_limit_ctx and offset_increment_ctx) that are
+    set by the calling code before invoking this function.
 
     Args:
         params: Dictionary of string parameters for the ENTSO-E API query

@@ -215,8 +215,7 @@ def pagination(func):
     When an 'offset' parameter is present, this decorator automatically
     makes multiple API calls with increasing offset values until all data
     is retrieved. The increment size is determined by the offset_increment
-    parameter from context (default: 100 for Market/Balancing, 200 for Outages).
-    Results from all pages are combined into a single list.
+    parameter from context. Results from all pages are combined into a single list.
 
     Returns:
         List of BaseModel instances from all paginated results combined.
