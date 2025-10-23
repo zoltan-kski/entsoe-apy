@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from functools import wraps
 import io
 from time import sleep
@@ -12,6 +13,9 @@ from ..utils.utils import (
     check_date_range_limit,
     split_date_range as split_date_range_util,
 )
+
+max_days_limit_ctx: ContextVar[int] = ContextVar("max_days_limit")
+offset_increment_ctx: ContextVar[int] = ContextVar("offset_increment")
 
 
 class AcknowledgementDocumentError(Exception):
@@ -108,14 +112,17 @@ def split_date_range(func):
     """
 
     @wraps(func)
-    def range_wrapper(params, max_days_limit=365, *args, **kwargs):
+    def range_wrapper(params, *args, **kwargs):
+        # Get max_days_limit from context
+        max_days_limit = max_days_limit_ctx.get()
+
         # Extract period parameters from params dict
         period_start = params.get("periodStart")
         period_end = params.get("periodEnd")
 
         # If no period parameters, just call the function normally
         if period_start is None or period_end is None:
-            return func(params, max_days_limit, *args, **kwargs)
+            return func(params, *args, **kwargs)
 
         # Check if the range exceeds the limit
         if check_date_range_limit(period_start, period_end, max_days=max_days_limit):
@@ -145,8 +152,8 @@ def split_date_range(func):
             )
 
             # Recursively call for both halves
-            result1 = range_wrapper(params1, max_days_limit, *args, **kwargs)
-            result2 = range_wrapper(params2, max_days_limit, *args, **kwargs)
+            result1 = range_wrapper(params1, *args, **kwargs)
+            result2 = range_wrapper(params2, *args, **kwargs)
 
             logger.debug(
                 f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
@@ -154,7 +161,7 @@ def split_date_range(func):
             return [*result1, *result2]
 
         # Range is within limit, make the API call
-        return func(params, max_days_limit, *args, **kwargs)
+        return func(params, *args, **kwargs)
 
     return range_wrapper
 
@@ -206,9 +213,9 @@ def pagination(func):
     Decorator that handles pagination for API requests with large result sets.
 
     When an 'offset' parameter is present, this decorator automatically
-    makes multiple API calls with increasing offset values (0, 100, 200, etc.)
-    until all data is retrieved. Results from all pages are combined into
-    a single list.
+    makes multiple API calls with increasing offset values until all data
+    is retrieved. The increment size is determined by the offset_increment
+    parameter from context. Results from all pages are combined into a single list.
 
     Returns:
         List of BaseModel instances from all paginated results combined.
@@ -220,11 +227,18 @@ def pagination(func):
         if "offset" not in params:
             return func(params, *args, **kwargs)
 
-        logger.debug("Offset parameter found, starting pagination")
+        # Get offset_increment from context, with default and warning if not set
+        offset_increment = offset_increment_ctx.get()
+
+        logger.debug(
+            f"Offset parameter found, starting pagination with increment={offset_increment}"
+        )
 
         merged_result = []
 
-        for offset in range(0, 4801, 100):  # 0 to 4800 in increments of 100
+        for offset in range(
+            0, 4801, offset_increment
+        ):  # 0 to 4800 in increments of offset_increment
             params["offset"] = offset
 
             result = func(params, *args, **kwargs)
