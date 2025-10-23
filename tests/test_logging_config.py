@@ -71,8 +71,8 @@ class TestLoggingConfig:
 
         # Verify that logger.add() was called to add new handler with correct level
         mock_logger.add.assert_called_once()
-        call_args = mock_logger.add.call_args
-        assert call_args[1]["level"] == "DEBUG"
+        call_kwargs = mock_logger.add.call_args.kwargs
+        assert call_kwargs["level"] == "DEBUG"
 
     def test_existing_functionality_preserved(self):
         """Test that existing functionality is preserved with log_level parameter."""

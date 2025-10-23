@@ -140,9 +140,9 @@ class TestRetryDecorator:
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
         warning_call = mock_logger.warning.call_args[0][0]
-        assert "Connection Error on attempt 1/3" in warning_call
+        assert "Retry attempt 1/3 failed" in warning_call
         assert "First failure" in warning_call
-        assert "Retrying in 1 seconds" in warning_call
+        assert "Retrying in 1s" in warning_call
 
     def test_retry_decorator_logs_final_error(self):
         """Test that retry decorator logs error when all attempts fail."""

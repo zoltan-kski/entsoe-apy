@@ -68,11 +68,11 @@ class EntsoEConfig:
         env_token = os.getenv("ENTSOE_API") or None
         if security_token is None and env_token is not None:
             security_token = env_token
-            logger.success("Security token found in environment.")
+            logger.success("Security token loaded from environment")
 
         if security_token is None:
             logger.warning(
-                "Security token is required. Please provide it explicitly using "
+                "Security token not provided. Please provide it explicitly using "
                 'entsoe.set_config("<security_token>") or set '
                 "the ENTSOE_API environment variable."
             )
@@ -82,7 +82,7 @@ class EntsoEConfig:
             try:
                 # Validate UUID format
                 UUID(security_token)
-                logger.debug("Security token is a valid UUID.")
+                logger.trace("Security token format validated successfully")
             except ValueError:
                 logger.error("Invalid security_token format. Must be a valid UUID.")
 
@@ -105,6 +105,7 @@ class EntsoEConfig:
         Raises:
             ValueError: If security token is None or invalid format
         """
+        logger.trace("validate_security_token: Enter")
         if self.security_token is None:
             logger.error(
                 'Security token is not set. Please provide it explicitly using entsoe.set_config("<security_token>") or set the ENTSOE_API environment variable.'
@@ -124,7 +125,7 @@ class EntsoEConfig:
                 f"Invalid security token format. Must be a valid UUID. Error: {e}"
             ) from e
 
-        logger.debug("security_token validation passed.")
+        logger.trace("validate_security_token: Exit, validation passed")
 
 
 # Global configuration instance
