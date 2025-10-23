@@ -281,7 +281,11 @@ class Base:
             a single request. Each model preserves its associated metadata.
         """
         # Set context variables for decorators to access
-        max_days_limit_ctx.set(self.max_days_limit)
-        offset_increment_ctx.set(self.offset_increment)
-        response = query_api(self.params)
-        return response
+        max_days_token = max_days_limit_ctx.set(self.max_days_limit)
+        offset_increment_token = offset_increment_ctx.set(self.offset_increment)
+        try:
+            response = query_api(self.params)
+            return response
+        finally:
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_increment_token)
