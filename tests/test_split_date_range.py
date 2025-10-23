@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from entsoe.query.decorators import split_date_range
+from entsoe.query.decorators import split_date_range, max_days_limit_ctx
 
 
 class TestSplitDateRangeDecorator:
@@ -13,7 +13,7 @@ class TestSplitDateRangeDecorator:
         when no update parameters are present."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -23,21 +23,25 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202201010000,  # 2022-01-01 00:00
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should split into multiple calls
-        assert len(result) > 1
-        # Each result should have periodStart and periodEnd
-        for item in result:
-            assert "periodStart" in item
-            assert "periodEnd" in item
+            # Should split into multiple calls
+            assert len(result) > 1
+            # Each result should have periodStart and periodEnd
+            for item in result:
+                assert "periodStart" in item
+                assert "periodEnd" in item
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_no_split_when_within_limit_period_only(self):
         """Test that no split occurs when date range is within limit
         using only period parameters."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -47,19 +51,23 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202007010000,  # 2020-07-01 00:00
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should not split
-        assert len(result) == 1
-        assert result[0]["periodStart"] == 202001010000
-        assert result[0]["periodEnd"] == 202007010000
+            # Should not split
+            assert len(result) == 1
+            assert result[0]["periodStart"] == 202001010000
+            assert result[0]["periodEnd"] == 202007010000
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_split_with_update_parameters(self):
         """Test that the decorator splits based on update parameters
         when both period and update parameters are present."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -72,19 +80,23 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202007010000,  # 2020-07-01 00:00 (6 months)
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should not split because update range is within limit
-        assert len(result) == 1
-        assert result[0]["periodStart"] == 202001010000
-        assert result[0]["periodEnd"] == 202201010000
+            # Should not split because update range is within limit
+            assert len(result) == 1
+            assert result[0]["periodStart"] == 202001010000
+            assert result[0]["periodEnd"] == 202201010000
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_split_update_parameters_exceed_limit(self):
         """Test that the decorator splits based on update parameters
         when they exceed the limit."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -96,24 +108,28 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202201010000,  # 2022-01-01 00:00 (2 years)
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should split because update range exceeds limit
-        assert len(result) > 1
-        # All results should preserve the original period parameters
-        for item in result:
-            assert item["periodStart"] == 201901010000
-            assert item["periodEnd"] == 202301010000
-            # But update parameters should be split
-            assert "periodStartUpdate" in item
-            assert "periodEndUpdate" in item
+            # Should split because update range exceeds limit
+            assert len(result) > 1
+            # All results should preserve the original period parameters
+            for item in result:
+                assert item["periodStart"] == 201901010000
+                assert item["periodEnd"] == 202301010000
+                # But update parameters should be split
+                assert "periodStartUpdate" in item
+                assert "periodEndUpdate" in item
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_no_period_parameters(self):
         """Test that the decorator doesn't split when no period parameters
         are present."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -121,18 +137,22 @@ class TestSplitDateRangeDecorator:
             "documentType": "A77",
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should not split
-        assert len(result) == 1
-        assert result[0] == params
+            # Should not split
+            assert len(result) == 1
+            assert result[0] == params
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_logging_for_update_parameters(self):
         """Test that appropriate log messages are generated when using
         update parameters."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -143,21 +163,25 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202007010000,
         }
 
-        with patch("entsoe.query.decorators.logger") as mock_logger:
-            mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            with patch("entsoe.query.decorators.logger") as mock_logger:
+                mock_query(params)
 
-            # Verify logging indicates use of update parameters
-            call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
-            assert any("update parameters" in arg.lower() for arg in call_args), (
-                "Should log that update parameters are being used"
-            )
+                # Verify logging indicates use of update parameters
+                call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
+                assert any("update parameters" in arg.lower() for arg in call_args), (
+                    "Should log that update parameters are being used"
+                )
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_logging_for_period_parameters(self):
         """Test that appropriate log messages are generated when using
         only period parameters."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -166,20 +190,24 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202007010000,
         }
 
-        with patch("entsoe.query.decorators.logger") as mock_logger:
-            mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            with patch("entsoe.query.decorators.logger") as mock_logger:
+                mock_query(params)
 
-            # Verify logging indicates use of period parameters
-            call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
-            assert any("period parameters" in arg.lower() for arg in call_args), (
-                "Should log that period parameters are being used"
-            )
+                # Verify logging indicates use of period parameters
+                call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
+                assert any("period parameters" in arg.lower() for arg in call_args), (
+                    "Should log that period parameters are being used"
+                )
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_split_preserves_other_params(self):
         """Test that splitting preserves all other parameters."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -191,19 +219,23 @@ class TestSplitDateRangeDecorator:
             "businessType": "A53",
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # All results should preserve other parameters
-        for item in result:
-            assert item["documentType"] == "A77"
-            assert item["biddingZone_Domain"] == "10YDE-VE-------2"
-            assert item["businessType"] == "A53"
+            # All results should preserve other parameters
+            for item in result:
+                assert item["documentType"] == "A77"
+                assert item["biddingZone_Domain"] == "10YDE-VE-------2"
+                assert item["businessType"] == "A53"
+        finally:
+            max_days_limit_ctx.reset(token)
 
     def test_recursive_splitting(self):
         """Test that the decorator can recursively split very large ranges."""
 
         @split_date_range
-        def mock_query(params, max_days_limit=365):
+        def mock_query(params):
             """Mock query function that returns params for testing."""
             return [params]
 
@@ -213,7 +245,11 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202401010000,  # 2024-01-01 00:00 (4 years)
         }
 
-        result = mock_query(params, max_days_limit=365)
+        token = max_days_limit_ctx.set(365)
+        try:
+            result = mock_query(params)
 
-        # Should split into at least 4 parts
-        assert len(result) >= 4
+            # Should split into at least 4 parts
+            assert len(result) >= 4
+        finally:
+            max_days_limit_ctx.reset(token)
