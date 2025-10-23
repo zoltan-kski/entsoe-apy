@@ -149,7 +149,7 @@ class TestSplitDateRangeDecorator:
 
     def test_logging_for_update_parameters(self):
         """Test that appropriate log messages are generated when using
-        update parameters."""
+        update parameters and they exceed the limit."""
 
         @split_date_range
         def mock_query(params):
@@ -159,8 +159,8 @@ class TestSplitDateRangeDecorator:
         params = {
             "periodStart": 201901010000,
             "periodEnd": 202301010000,
-            "periodStartUpdate": 202001010000,
-            "periodEndUpdate": 202007010000,
+            "periodStartUpdate": 202001010000,  # 2020-01-01
+            "periodEndUpdate": 202201010000,  # 2022-01-01 (2 years - exceeds limit)
         }
 
         token = max_days_limit_ctx.set(365)
@@ -168,17 +168,18 @@ class TestSplitDateRangeDecorator:
             with patch("entsoe.query.decorators.logger") as mock_logger:
                 mock_query(params)
 
-                # Verify logging indicates use of update parameters
+                # Verify logging indicates splitting on update parameters
                 call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
-                assert any("update parameters" in arg.lower() for arg in call_args), (
-                    "Should log that update parameters are being used"
-                )
+                assert any(
+                    "periodStartUpdate" in arg and "periodEndUpdate" in arg and "Splitting" in arg
+                    for arg in call_args
+                ), "Should log that periodStartUpdate and periodEndUpdate parameters are being split"
         finally:
             max_days_limit_ctx.reset(token)
 
     def test_logging_for_period_parameters(self):
         """Test that appropriate log messages are generated when using
-        only period parameters."""
+        only period parameters and the range exceeds the limit."""
 
         @split_date_range
         def mock_query(params):
@@ -186,8 +187,8 @@ class TestSplitDateRangeDecorator:
             return [params]
 
         params = {
-            "periodStart": 202001010000,
-            "periodEnd": 202007010000,
+            "periodStart": 202001010000,  # 2020-01-01
+            "periodEnd": 202201010000,  # 2022-01-01 (2 years - exceeds limit)
         }
 
         token = max_days_limit_ctx.set(365)
@@ -195,11 +196,12 @@ class TestSplitDateRangeDecorator:
             with patch("entsoe.query.decorators.logger") as mock_logger:
                 mock_query(params)
 
-                # Verify logging indicates use of period parameters
+                # Verify logging indicates splitting on period parameters
                 call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
-                assert any("period parameters" in arg.lower() for arg in call_args), (
-                    "Should log that period parameters are being used"
-                )
+                assert any(
+                    "periodStart" in arg and "periodEnd" in arg and "Splitting" in arg
+                    for arg in call_args
+                ), "Should log that periodStart and periodEnd parameters are being split"
         finally:
             max_days_limit_ctx.reset(token)
 

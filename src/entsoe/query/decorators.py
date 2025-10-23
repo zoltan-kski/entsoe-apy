@@ -120,31 +120,20 @@ def split_date_range(func):
         # Get max_days_limit from context
         max_days_limit = max_days_limit_ctx.get()
 
-        # Extract period parameters from params dict
-        period_start = params.get("periodStart")
-        period_end = params.get("periodEnd")
+        # Determine which parameters to use for range checking
         period_start_update = params.get("periodStartUpdate")
         period_end_update = params.get("periodEndUpdate")
+        period_start = params.get("periodStart")
+        period_end = params.get("periodEnd")
 
-        # Determine which parameters to use for range checking
         # For outages endpoints: if update parameters are present, use them
-        # Otherwise, use regular period parameters
         if period_start_update is not None and period_end_update is not None:
-            # Use update parameters for range checking (outages endpoints)
-            check_start = period_start_update
-            check_end = period_end_update
-            split_param_start = "periodStartUpdate"
-            split_param_end = "periodEndUpdate"
-            logger.debug(
-                "Using update parameters for range checking (outages endpoint)"
-            )
+            check_start, check_end = period_start_update, period_end_update
+            split_param_start, split_param_end = "periodStartUpdate", "periodEndUpdate"
+        # Otherwise, use regular period parameters
         elif period_start is not None and period_end is not None:
-            # Use regular period parameters for range checking
-            check_start = period_start
-            check_end = period_end
-            split_param_start = "periodStart"
-            split_param_end = "periodEnd"
-            logger.debug("Using period parameters for range checking")
+            check_start, check_end = period_start, period_end
+            split_param_start, split_param_end = "periodStart", "periodEnd"
         else:
             # No valid date range to check, proceed with the call
             return func(params, *args, **kwargs)
@@ -152,8 +141,8 @@ def split_date_range(func):
         # Check if the range exceeds the limit
         if check_date_range_limit(check_start, check_end, max_days=max_days_limit):
             logger.debug(
-                f"Splitting date range {check_start} to {check_end} "
-                f"(exceeds {max_days_limit} day limit)"
+                f"Splitting date range on parameters '{split_param_start}' and '{split_param_end}': "
+                f"{check_start} to {check_end} (exceeds {max_days_limit} day limit)"
             )
 
             # Split the range and make recursive calls
