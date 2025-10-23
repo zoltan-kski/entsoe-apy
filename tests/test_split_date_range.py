@@ -169,14 +169,13 @@ class TestSplitDateRangeDecorator:
                 mock_query(params)
 
                 # Verify logging indicates splitting on update parameters
-                call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
+                # Check INFO level for high-level splitting message
+                info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
                 assert any(
-                    "periodStartUpdate" in arg
-                    and "periodEndUpdate" in arg
-                    and "Splitting" in arg
-                    for arg in call_args
+                    "exceeds" in arg and "day limit" in arg and "splitting" in arg.lower()
+                    for arg in info_calls
                 ), (
-                    "Should log that periodStartUpdate and periodEndUpdate parameters are being split"
+                    "Should log INFO that the date range is being split"
                 )
         finally:
             max_days_limit_ctx.reset(token)
@@ -201,12 +200,13 @@ class TestSplitDateRangeDecorator:
                 mock_query(params)
 
                 # Verify logging indicates splitting on period parameters
-                call_args = [call[0][0] for call in mock_logger.debug.call_args_list]
+                # Check INFO level for high-level splitting message
+                info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
                 assert any(
-                    "periodStart" in arg and "periodEnd" in arg and "Splitting" in arg
-                    for arg in call_args
+                    "exceeds" in arg and "day limit" in arg and "splitting" in arg.lower()
+                    for arg in info_calls
                 ), (
-                    "Should log that periodStart and periodEnd parameters are being split"
+                    "Should log INFO that the date range is being split"
                 )
         finally:
             max_days_limit_ctx.reset(token)
