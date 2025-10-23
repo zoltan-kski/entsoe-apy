@@ -56,6 +56,9 @@ class ImplicitFlowBasedAllocationsCongestionIncome(Market):
             contract_market_agreement_type=contract_market_agreement_type,
         )
 
+        # Validate that in_domain and out_domain are the same
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=True)
+
 
 class TotalNominatedCapacity(Market):
     """Parameters for 12.1.B Total Nominated Capacity.
@@ -97,6 +100,9 @@ class TotalNominatedCapacity(Market):
             out_domain=out_domain,
             business_type="B08",  # Fixed: Total nominated capacity
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
 class ImplicitAllocationsOfferedCapacity(Market):
@@ -147,6 +153,9 @@ class ImplicitAllocationsOfferedCapacity(Market):
             contract_market_agreement_type=contract_market_agreement_type,
             auction_type="A01",  # Fixed: Implicit
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional parameters
         self.add_optional_param("Update_DateAndOrTime", update_date_and_or_time)
@@ -207,6 +216,9 @@ class EnergyPrices(Market):
             offset=offset,
         )
 
+        # Validate that in_domain and out_domain are the same
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=True)
+
         # Add optional classification parameter
         param_name = "classificationSequence_AttributeInstanceComponent.position"
         self.add_optional_param(param_name, classification_sequence_position)
@@ -255,6 +267,9 @@ class TotalCapacityAllocated(Market):
             business_type="B07",  # Fixed: Total allocated capacity
             contract_market_agreement_type=contract_market_agreement_type,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
 class ExplicitAllocationsOfferedCapacity(Market):
@@ -306,6 +321,9 @@ class ExplicitAllocationsOfferedCapacity(Market):
             auction_category=auction_category,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
         # Add optional classification parameter
         param_name = "ClassificationSequence_AttributeInstanceComponent.Position"
         self.add_optional_param(param_name, classification_sequence_position)
@@ -355,6 +373,9 @@ class FlowBasedAllocations(Market):
             contract_market_agreement_type=contract_market_agreement_type,
             auction_type="A01",  # Fixed: Implicit
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
 class ContinuousAllocationsOfferedCapacity(Market):
@@ -472,6 +493,9 @@ class ExplicitAllocationsUseTransferCapacity(Market):
             auction_category=auction_category,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
         # Add optional classification parameter
         param_name = "ClassificationSequence_AttributeInstanceComponent.Position"
         self.add_optional_param(param_name, classification_sequence_position)
@@ -526,6 +550,9 @@ class ExplicitAllocationsAuctionRevenue(Market):
             business_type="B07",  # Fixed: Auction Revenue
             contract_market_agreement_type=contract_market_agreement_type,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
 class TransferCapacitiesThirdCountriesExplicit(Market):
@@ -583,6 +610,9 @@ class TransferCapacitiesThirdCountriesExplicit(Market):
             auction_category=auction_category,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
         # Add optional classification parameter
         param_name = "classificationSequence_AttributeInstanceComponent.Position"
         self.add_optional_param(param_name, classification_sequence_position)
@@ -636,6 +666,9 @@ class TransferCapacitiesThirdCountriesImplicit(Market):
             auction_type="A01",  # Fixed: Implicit
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
         # Add optional classification parameter
         param_name = "classificationSequence_AttributeInstanceComponent.Position"
         self.add_optional_param(param_name, classification_sequence_position)
@@ -682,6 +715,9 @@ class ImplicitAuctionNetPositions(Market):
             business_type="B09",  # Fixed: Net position
             contract_market_agreement_type=contract_market_agreement_type,
         )
+
+        # Validate that in_domain and out_domain are the same
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=True)
 
 
 class FlowBasedAllocationsLegacy(Market):
@@ -730,3 +766,6 @@ class FlowBasedAllocationsLegacy(Market):
             contract_market_agreement_type=contract_market_agreement_type,
             auction_type="A01",  # Fixed: Implicit
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)

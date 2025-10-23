@@ -52,6 +52,9 @@ class TotalNominatedCapacity(Transmission):
             in_domain=in_domain,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
 
 class ImplicitAllocationsOfferedCapacity(Transmission):
     """Parameters for 11.1 Implicit Allocations - Offered Transfer Capacity.
@@ -96,6 +99,9 @@ class ImplicitAllocationsOfferedCapacity(Transmission):
             out_domain=out_domain,
             in_domain=in_domain,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters for implicit allocations
         self.add_optional_param("auction.Type", "A01")
@@ -144,6 +150,9 @@ class ExplicitAllocationsOfferedCapacity(Transmission):
             out_domain=out_domain,
             in_domain=in_domain,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters for explicit allocations
         self.add_optional_param("auction.Type", "A02")
@@ -194,6 +203,9 @@ class TotalCapacityAlreadyAllocated(Transmission):
             in_domain=in_domain,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
         # Add specific parameters
         self.add_optional_param("contract_MarketAgreement.Type", "A01")
 
@@ -239,6 +251,9 @@ class CrossBorderPhysicalFlows(Transmission):
             in_domain=in_domain,
         )
 
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
+
 
 class CommercialSchedules(Transmission):
     """Parameters for 12.1.F Commercial Schedules.
@@ -281,6 +296,9 @@ class CommercialSchedules(Transmission):
             out_domain=out_domain,
             in_domain=in_domain,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters
         self.add_optional_param("contract_MarketAgreement.Type", "A01")
@@ -327,6 +345,9 @@ class ForecastedTransferCapacities(Transmission):
             out_domain=out_domain,
             in_domain=in_domain,
         )
+
+        # Validate that in_domain and out_domain are different
+        self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters
         self.add_optional_param("contract_MarketAgreement.Type", "A01")
