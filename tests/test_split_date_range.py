@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from entsoe.query.decorators import split_date_range, max_days_limit_ctx
+from entsoe.query.decorators import max_days_limit_ctx, split_date_range
 
 
 class TestSplitDateRangeDecorator:
