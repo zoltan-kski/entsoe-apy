@@ -2,22 +2,12 @@
 
 import pytest
 
-from entsoe import set_config
 from entsoe.Base.Outages import Outages
-from entsoe.config.config import reset_config
 from entsoe.OMI.OMI import OMI
 
 
 class TestEncapsulation:
     """Test that OMI and Outages classes properly use Base class encapsulation."""
-
-    def setup_method(self):
-        """Set up test configuration before each test."""
-        set_config(security_token="test_token")
-
-    def teardown_method(self):
-        """Clean up configuration after each test."""
-        reset_config()
 
     def test_omi_parameter_initialization(self):
         """Test that OMI class properly initializes parameters using base

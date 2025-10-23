@@ -1,26 +1,20 @@
 # %%
-from os import getenv
 
 import pytest
 
-from entsoe import set_config
+from entsoe.config import get_config
 from entsoe.Market import EnergyPrices
 from entsoe.utils import extract_records
 
-_ENTSOE_API = getenv("ENTSOE_API") or None
-
-EIC = "10Y1001A1001A82H"
-
-period_start = 202012312300
-period_end = 202101022300
-
 
 @pytest.mark.skipif(
-    _ENTSOE_API is None, reason="ENTSOE_API environment variable not set"
+    get_config().security_token is None,
+    reason="ENTSOE_API environment variable not set",
 )
 def test_extract_records():
-    set_config(security_token=_ENTSOE_API)
-
+    EIC = "10YNL----------L"
+    period_start = 202001010000
+    period_end = 202001030000
     result = EnergyPrices(
         in_domain=EIC,
         out_domain=EIC,

@@ -4,7 +4,7 @@ authors = [
   {name="Jonathan Berrisch", email="jonathan.berrisch@uni-due.de"},
   {name="Jie Xu", email="jie.xu@uni-due.de"}
 ]
-version = "0.3.3"
+version = "0.4.0"
 description = "A Python library for accessing ENTSO-E Transparency Platform API endpoints"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -35,7 +35,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/BerriJ/entsoe-api-py/issues"
 
 [dependency-groups]
-dev = ["pytest~=8.3.3", "pytest-xdist~=3.6.1", "ruff==0.12.4"]
+dev = ["pytest~=8.3.3", "pytest-xdist~=3.6.1", "ruff==0.12.4", "build", "twine"]
 
 [tool.ruff]
 exclude = [

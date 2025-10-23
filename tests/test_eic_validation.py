@@ -2,23 +2,13 @@
 
 import pytest
 
-from entsoe import set_config
 from entsoe.Balancing import AcceptedAggregatedOffers, CrossBorderBalancing
 from entsoe.Base.Base import Base, ValidationError
-from entsoe.config.config import reset_config
 from entsoe.Market import EnergyPrices
 
 
 class TestEICValidation:
     """Test cases for EIC code validation."""
-
-    def setup_method(self):
-        """Set up test configuration before each test."""
-        set_config(security_token="test_token")
-
-    def teardown_method(self):
-        """Clean up configuration after each test."""
-        reset_config()
 
     def test_validate_eic_code_valid(self):
         """Test validation passes for valid EIC codes."""

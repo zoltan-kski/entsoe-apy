@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from functools import wraps
 import io
 from time import sleep
@@ -8,7 +9,13 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ..config.config import get_config
-from ..utils.utils import check_date_range_limit, split_date_range
+from ..utils.utils import (
+    check_date_range_limit,
+    split_date_range as split_date_range_util,
+)
+
+max_days_limit_ctx: ContextVar[int] = ContextVar("max_days_limit")
+offset_increment_ctx: ContextVar[int] = ContextVar("offset_increment")
 
 
 class AcknowledgementDocumentError(Exception):
@@ -19,6 +26,12 @@ class AcknowledgementDocumentError(Exception):
 
 class ServiceUnavailableError(Exception):
     """Raised when the ENTSO-E API returns a 503 Service Unavailable status."""
+
+    pass
+
+
+class UnexpectedError(Exception):
+    """Raised when the ENTSO-E API returns an unexpected error."""
 
     pass
 
@@ -39,6 +52,7 @@ def unzip(func):
 
     @wraps(func)
     def unzip_wrapper(*args, **kwargs) -> list[Response]:
+        logger.trace("unzip_wrapper: Enter")
         # Call the original function to get the list of responses
         response_list = func(*args, **kwargs)
 
@@ -60,6 +74,7 @@ def unzip(func):
                 responses: list[Response] = []
 
                 for file_name in file_names:
+                    logger.trace(f"Extracting file from ZIP: {file_name}")
                     with zip_file.open(file_name) as xml_file:
                         xml_content = xml_file.read().decode("utf-8")
 
@@ -75,127 +90,143 @@ def unzip(func):
                         request=response.request,
                     )
                     responses.append(new_response)
-                    logger.debug(
+                    logger.trace(
                         f"Created Response object for {file_name} ({len(xml_content)} characters)"
                     )
 
+                logger.trace(f"unzip_wrapper: Exit with {len(responses)} responses")
                 return responses
-        else:
-            logger.debug("Response is not ZIP returning original response")
-            return response_list
+
+        logger.trace("unzip_wrapper: Exit with single response")
+        return response_list
 
     return unzip_wrapper
 
 
-def range_limited(func):
+def split_date_range(func):
     """
-    Decorator that handles range limit errors by splitting the requested period
-    and combining the results.
+    Decorator that automatically splits large date ranges into smaller chunks.
 
-    Catches cases where the date range exceeds the API's 1-year limit, splits
-    the requested period in two, and makes recursive calls. The results from
-    both halves are combined into a single list of BaseModel instances.
+    When a date range exceeds the specified limit (default 365 days), this decorator
+    splits the requested period into two halves, makes recursive calls for each half,
+    and combines the results into a single list of BaseModel instances.
+
+    For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
+    - The 1-year limit applies to periodStartUpdate/periodEndUpdate
+    - periodStart/periodEnd can exceed 1 year
 
     Returns:
         List of BaseModel instances from all time periods combined.
     """
 
     @wraps(func)
-    def range_wrapper(params, max_days_limit=365, *args, **kwargs):
-        # Extract period parameters from params dict
+    def range_wrapper(params, *args, **kwargs):
+        logger.trace("split_date_range wrapper: Enter")
+        # Get max_days_limit from context
+        max_days_limit = max_days_limit_ctx.get()
+
+        # Determine which parameters to use for range checking
+        period_start_update = params.get("periodStartUpdate")
+        period_end_update = params.get("periodEndUpdate")
         period_start = params.get("periodStart")
         period_end = params.get("periodEnd")
 
-        # If no period parameters, just call the function normally
-        if period_start is None or period_end is None:
-            logger.debug("No period parameters found, calling function directly")
-            return func(params, max_days_limit, *args, **kwargs)
-
-        logger.debug(f"Range_limited decorator called for function: {func.__name__}")
-        logger.debug(f"Period range: {period_start} to {period_end}")
-        logger.debug(f"Using max_days_limit: {max_days_limit}")
+        # For outages endpoints: if update parameters are present, use them
+        if period_start_update is not None and period_end_update is not None:
+            check_start, check_end = period_start_update, period_end_update
+            split_param_start, split_param_end = "periodStartUpdate", "periodEndUpdate"
+        # Otherwise, use regular period parameters
+        elif period_start is not None and period_end is not None:
+            check_start, check_end = period_start, period_end
+            split_param_start, split_param_end = "periodStart", "periodEnd"
+        else:
+            # No valid date range to check, proceed with the call
+            logger.trace("split_date_range wrapper: No date range to check")
+            return func(params, *args, **kwargs)
 
         # Check if the range exceeds the limit
-        if check_date_range_limit(period_start, period_end, max_days=max_days_limit):
-            logger.debug(f"Range exceeds {max_days_limit} days, splitting range")
+        if check_date_range_limit(check_start, check_end, max_days=max_days_limit):
+            logger.info(
+                f"Date range {check_start} to {check_end} exceeds {max_days_limit} day limit, splitting query"
+            )
 
             # Split the range and make recursive calls
-            pivot_date = split_date_range(
-                period_start, period_end, max_days=max_days_limit
+            pivot_date = split_date_range_util(
+                check_start, check_end, max_days=max_days_limit
             )
             logger.debug(f"Split at pivot date: {pivot_date}")
 
             # Create new params for the first half
             params1 = params.copy()
-            params1["periodEnd"] = pivot_date
-            logger.debug(
-                f"First half: {params1['periodStart']} to {params1['periodEnd']}"
+            params1[split_param_end] = pivot_date
+            logger.trace(
+                f"First half: {params1[split_param_start]} to {params1[split_param_end]}"
             )
 
             # Create new params for the second half
             params2 = params.copy()
-            params2["periodStart"] = pivot_date
-            logger.debug(
-                f"Second half: {params2['periodStart']} to {params2['periodEnd']}"
+            params2[split_param_start] = pivot_date
+            logger.trace(
+                f"Second half: {params2[split_param_start]} to {params2[split_param_end]}"
             )
 
             # Recursively call for both halves
-            logger.debug("Making recursive call for first half")
-            result1 = range_wrapper(params1, max_days_limit, *args, **kwargs)
-            logger.debug("Making recursive call for second half")
-            result2 = range_wrapper(params2, max_days_limit, *args, **kwargs)
+            result1 = range_wrapper(params1, *args, **kwargs)
+            result2 = range_wrapper(params2, *args, **kwargs)
 
-            logger.debug("Merging results from both halves")
+            logger.debug(
+                f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
+            )
+            logger.trace("split_date_range wrapper: Exit after merge")
             return [*result1, *result2]
 
-        else:
-            # Range is within limit, make the API call
-            logger.debug(f"Range within {max_days_limit} days, making API call")
-            return func(params, max_days_limit, *args, **kwargs)
+        # Range is within limit, make the API call
+        logger.trace("split_date_range wrapper: Exit without split")
+        return func(params, *args, **kwargs)
 
     return range_wrapper
 
 
-def acknowledgement(func):
+def handle_acknowledgement(func):
     """
     Decorator that handles acknowledgement documents from the ENTSO-E API.
 
     Checks if the API response contains an acknowledgement document indicating
     an error or "No matching data found" condition. Returns None for "No matching
-    data found" cases, or raises an AcknowledgementDocumentError for other error
+    data found" cases, raises UnexpectedError for transient server errors that
+    should be retried, or raises AcknowledgementDocumentError for other error
     conditions.
 
     Returns:
         The original BaseModel instance, or None if no data was found.
 
     Raises:
-        AcknowledgementDocumentError: For acknowledgement documents containing errors
+        UnexpectedError: For transient "unexpected error occurred" messages (triggers retry)
+        AcknowledgementDocumentError: For other acknowledgement documents containing errors
     """
 
     @wraps(func)
     def ack_wrapper(params, *args, **kwargs) -> BaseModel | None:
-        logger.debug(f"acknowledgement decorator called for function: {func.__name__}")
-
+        logger.trace("handle_acknowledgement wrapper: Enter")
         xml_model = func(params, *args, **kwargs)
         name = type(xml_model).__name__
 
-        logger.debug(f"Received response with name: {name}")
-
         if "acknowledgementmarketdocument" in name.lower():
-            logger.debug("Response contains acknowledgement document")
+            logger.debug(f"Response is acknowledgement document: {name}")
             reason = xml_model.reason[0].text
-            logger.debug(f"Acknowledgement reason: {reason}")
 
             if "No matching data found" in reason:
-                logger.debug(reason)
-                logger.debug("Returning None")
+                logger.info("No matching data found")
+                logger.trace("handle_acknowledgement wrapper: Exit with None")
                 return None
+            elif "Unexpected error occurred" in reason:
+                logger.error(f"Unexpected error in acknowledgement: {reason}")
+                raise UnexpectedError(reason)
             else:
-                for reason in xml_model.reason:
-                    logger.error(reason.text)
-                raise AcknowledgementDocumentError(xml_model.reason)
+                logger.error(f"Acknowledgement error: {reason}")
+                raise AcknowledgementDocumentError(reason)
 
-        logger.debug("Acknowledgement check passed, returning xml_model")
+        logger.trace("handle_acknowledgement wrapper: Exit with xml_model")
         return xml_model
 
     return ack_wrapper
@@ -206,9 +237,9 @@ def pagination(func):
     Decorator that handles pagination for API requests with large result sets.
 
     When an 'offset' parameter is present, this decorator automatically
-    makes multiple API calls with increasing offset values (0, 100, 200, etc.)
-    until all data is retrieved. Results from all pages are combined into
-    a single list.
+    makes multiple API calls with increasing offset values until all data
+    is retrieved. The increment size is determined by the offset_increment
+    parameter from context. Results from all pages are combined into a single list.
 
     Returns:
         List of BaseModel instances from all paginated results combined.
@@ -216,71 +247,68 @@ def pagination(func):
 
     @wraps(func)
     def pagination_wrapper(params, *args, **kwargs):
-        logger.debug(f"pagination decorator called for function: {func.__name__}")
-
+        logger.trace("pagination wrapper: Enter")
         # Check if offset is in params (indicating pagination may be needed)
         if "offset" not in params:
-            logger.debug("No offset parameter found, calling function directly")
+            logger.trace("pagination wrapper: Exit, no offset parameter")
             return func(params, *args, **kwargs)
 
-        logger.debug("Offset parameter found, starting pagination")
+        # Get offset_increment from context, with default and warning if not set
+        offset_increment = offset_increment_ctx.get()
+
+        logger.info(f"Starting pagination with increment={offset_increment}")
 
         merged_result = []
 
-        for offset in range(0, 4801, 100):  # 0 to 4800 in increments of 100
-            logger.debug(f"Processing pagination offset: {offset}")
+        for offset in range(
+            0, 4801, offset_increment
+        ):  # 0 to 4800 in increments of offset_increment
             params["offset"] = offset
+            logger.trace(f"Fetching page at offset {offset}")
 
             result = func(params, *args, **kwargs)
 
             if not result:
-                logger.debug("Received empty result, pagination complete")
+                logger.debug(f"Pagination complete at offset {offset}, no more results")
                 break
 
             # Add results to accumulated list
             merged_result.extend(result)
-            logger.debug(
-                f"Added {len(result)} results, total accumulated: {len(merged_result)}"
-            )
+            logger.trace(f"Retrieved {len(result)} results at offset {offset}")
 
-        logger.debug(
-            f"Pagination completed, returning {len(merged_result)} total results"
-        )
+        logger.debug(f"Pagination completed with {len(merged_result)} total results")
+        logger.trace("pagination wrapper: Exit")
         return merged_result
 
     return pagination_wrapper
 
 
-def service_unavailable(func):
+def check_service_unavailable(func):
     """
-    Decorator that handles 503 Service Unavailable responses from the ENTSO-E API.
+    Decorator that checks for 503 Service Unavailable responses from the ENTSO-E API.
 
-    Checks if any response in the returned list has a 503 status code, logs an error,
-    and raises a ServiceUnavailableError with details about the service status.
+    Inspects the HTTP response status code and raises a ServiceUnavailableError
+    if a 503 status is detected, which triggers the retry mechanism.
 
     Returns:
-        The original list of Response objects if no 503 responses are found.
+        The original Response object if no 503 status is found.
 
     Raises:
-        ServiceUnavailableError: When any response has a 503 Service Unavailable status
+        ServiceUnavailableError: When the response has a 503 Service Unavailable status
     """
 
     @wraps(func)
-    def service_unavailable_wrapper(*args, **kwargs) -> list[Response]:
-        logger.debug(
-            "service_unavailable decorator called for function: {}", func.__name__
-        )
+    def service_unavailable_wrapper(*args, **kwargs) -> Response:
+        logger.trace("check_service_unavailable wrapper: Enter")
+        response = func(*args, **kwargs)
 
-        # Call the original function to get the list of responses
-        response_list = func(*args, **kwargs)
+        # Check response for 503 status
+        if response.status_code == 503:
+            logger.error("ENTSO-E API returned 503 Service Unavailable")
+            raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
 
-        # Check each response for 503 status
-        for response in response_list:
-            if response.status_code == 503:
-                raise ServiceUnavailableError("ENTSO-E API is unavailable (HTTP 503).")
-
-        logger.debug("No 503 Service Unavailable responses found")
-        return response_list
+        logger.trace("check_service_unavailable wrapper: Exit")
+        return response
 
     return service_unavailable_wrapper
 
@@ -296,19 +324,24 @@ def retry(func):
 
     @wraps(func)
     def retry_wrapper(*args, **kwargs):
+        logger.trace("retry wrapper: Enter")
         config = get_config()
         last_exception = None
 
         for attempt in range(config.retries):
+            logger.trace(f"Retry attempt {attempt + 1}/{config.retries}")
             try:
                 result = func(*args, **kwargs)
+                logger.trace(
+                    f"retry wrapper: Exit successfully on attempt {attempt + 1}"
+                )
                 return result
             # Catch connection errors, socket errors, and service unavailable errors
-            except (RequestError, ServiceUnavailableError) as e:
+            except (RequestError, ServiceUnavailableError, UnexpectedError) as e:
                 last_exception = e
                 logger.warning(
-                    f"Connection Error on attempt {attempt + 1}/{config.retries}: "
-                    f"{e}. Retrying in {config.retry_delay(attempt)} seconds..."
+                    f"Retry attempt {attempt + 1}/{config.retries} failed: {e}. "
+                    f"Retrying in {config.retry_delay(attempt)}s..."
                 )
                 if attempt < config.retries - 1:  # Don't sleep on the last attempt
                     sleep(config.retry_delay(attempt))

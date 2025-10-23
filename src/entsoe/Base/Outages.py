@@ -6,6 +6,9 @@ from .Base import Base
 class Outages(Base):
     """Outages data parameters for ENTSO-E Transparency Platform queries."""
 
+    # Outages group returns 200 documents per offset increment
+    offset_increment: int = 200
+
     def __init__(
         self,
         document_type: str,
