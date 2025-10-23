@@ -142,7 +142,7 @@ def query_and_parse(params: dict) -> list[BaseModel]:
 # Order matters! First handle range-limits, second handle pagination
 @split_date_range
 @pagination
-def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseModel]:
+def query_api(params: dict[str, str]) -> list[BaseModel]:
     """
     Main API query function that orchestrates the complete query process.
 
@@ -150,9 +150,12 @@ def query_api(params: dict[str, str], max_days_limit: int = 365) -> list[BaseMod
     the complete workflow including HTTP requests, response parsing, retry logic,
     date range splitting, and pagination.
 
+    Configuration for decorators (max_days_limit and offset_increment) is provided
+    via ContextVar objects (max_days_limit_ctx and offset_increment_ctx) that are
+    set by the calling code before invoking this function.
+
     Args:
         params: Dictionary of string parameters for the ENTSO-E API query
-        max_days_limit: Maximum number of days allowed in a single query (default: 365)
 
     Returns:
         List of Pydantic BaseModel instances. Multiple models may be returned when:

@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from ..query.decorators import max_days_limit_ctx, offset_increment_ctx
 from ..query.query_api import query_api
 from ..utils.mappings_dict import mappings
 
@@ -19,6 +20,9 @@ class Base:
 
     # Maximum days for date range queries (can be overridden by subclasses)
     max_days_limit: int = 365
+
+    # Number of documents returned per offset increment (can be overridden by subclasses)
+    offset_increment: int = 100
 
     def __init__(
         self,
@@ -274,5 +278,12 @@ class Base:
             periods or when the API returns multiple documents in response to
             a single request. Each model preserves its associated metadata.
         """
-        response = query_api(self.params, max_days_limit=self.max_days_limit)
-        return response
+        # Set context variables for decorators to access
+        max_days_token = max_days_limit_ctx.set(self.max_days_limit)
+        offset_increment_token = offset_increment_ctx.set(self.offset_increment)
+        try:
+            response = query_api(self.params)
+            return response
+        finally:
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_increment_token)
