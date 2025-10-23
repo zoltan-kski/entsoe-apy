@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
 import io
@@ -15,35 +14,8 @@ from ..utils.utils import (
     split_date_range as split_date_range_util,
 )
 
-# Context variables for decorator configuration
-_max_days_limit: ContextVar[int] = ContextVar("max_days_limit", default=365)
-_offset_increment: ContextVar[int] = ContextVar("offset_increment", default=100)
-
-
-@contextmanager
-def set_query_context(max_days_limit: int = 365, offset_increment: int = 100):
-    """
-    Context manager to set configuration values for query decorators.
-
-    This allows decorators to access max_days_limit and offset_increment values
-    without passing them through the function signature.
-
-    Args:
-        max_days_limit: Maximum number of days allowed in a single query (default: 365)
-        offset_increment: Number of documents returned per offset increment (default: 100)
-
-    Example:
-        >>> with set_query_context(max_days_limit=180, offset_increment=200):
-        ...     result = query_api(params)
-    """
-    token_max_days = _max_days_limit.set(max_days_limit)
-    token_offset = _offset_increment.set(offset_increment)
-    try:
-        yield
-    finally:
-        _max_days_limit.reset(token_max_days)
-        _offset_increment.reset(token_offset)
-
+max_days_limit_ctx: ContextVar[int] = ContextVar("max_days_limit")
+offset_increment_ctx: ContextVar[int] = ContextVar("offset_increment")
 
 class AcknowledgementDocumentError(Exception):
     """Raised when the API returns an acknowledgement document indicating an error."""
@@ -141,7 +113,7 @@ def split_date_range(func):
     @wraps(func)
     def range_wrapper(params, *args, **kwargs):
         # Get max_days_limit from context
-        max_days_limit = _max_days_limit.get()
+        max_days_limit = max_days_limit_ctx.get()
 
         # Extract period parameters from params dict
         period_start = params.get("periodStart")
@@ -255,8 +227,8 @@ def pagination(func):
         if "offset" not in params:
             return func(params, *args, **kwargs)
 
-        # Get offset_increment from context
-        offset_increment = _offset_increment.get()
+        # Get offset_increment from context, with default and warning if not set
+        offset_increment = offset_increment_ctx.get()
 
         logger.debug(
             f"Offset parameter found, starting pagination with increment={offset_increment}"
