@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from entsoe.Base.Balancing import Balancing
 from entsoe.Base.Market import Market
 from entsoe.Base.Outages import Outages
+from entsoe.query import decorators
 from entsoe.query.decorators import pagination
 
 
@@ -54,10 +55,16 @@ class TestPaginationOffsetIncrement:
         mock_func.side_effect = side_effect
 
         # Call the decorated function with offset_increment=100
-        decorated_func(params, offset_increment=100)
+        token = decorators.offset_increment_ctx.set(100)
+        try:
+            decorated_func(params)
+        finally:
+            decorators.offset_increment_ctx.reset(token)
 
         # Verify the function was called with offset=0
-        assert mock_func.call_count == 2  # First call returns data, second returns empty
+        assert (
+            mock_func.call_count == 2
+        )  # First call returns data, second returns empty
         # Verify the offset was set correctly in the params
         assert params["offset"] == 100  # Last offset value
 
@@ -82,7 +89,11 @@ class TestPaginationOffsetIncrement:
         mock_func.side_effect = side_effect
 
         # Call the decorated function with offset_increment=200
-        decorated_func(params, offset_increment=200)
+        token = decorators.offset_increment_ctx.set(200)
+        try:
+            decorated_func(params)
+        finally:
+            decorators.offset_increment_ctx.reset(token)
 
         # Verify the function was called with increasing offsets
         assert mock_func.call_count == 3  # Two calls with data, one empty
@@ -97,7 +108,11 @@ class TestPaginationOffsetIncrement:
         # Params without offset
         params = {"documentType": "A25"}
 
-        decorated_func(params, offset_increment=100)
+        token = decorators.offset_increment_ctx.set(100)
+        try:
+            decorated_func(params)
+        finally:
+            decorators.offset_increment_ctx.reset(token)
 
         # Should call the function once without pagination
         assert mock_func.call_count == 1
@@ -119,18 +134,20 @@ class TestPaginationOffsetIncrement:
         # Mock the entire query_api call chain
         with patch("entsoe.query.query_api.query_and_parse") as mock_query_parse:
             mock_query_parse.return_value = []
-            
+
             # Since we're patching deeper, we can directly verify the parameters
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
-            
-            # Capture the actual call to verify offset_increment
-            query_api(
-                outages.params,
-                max_days_limit=outages.max_days_limit,
-                offset_increment=outages.offset_increment,
-            )
-            
+
+            # Set context variables directly
+            token_max_days = decorators.max_days_limit_ctx.set(outages.max_days_limit)
+            token_offset = decorators.offset_increment_ctx.set(outages.offset_increment)
+            try:
+                query_api(outages.params)
+            finally:
+                decorators.max_days_limit_ctx.reset(token_max_days)
+                decorators.offset_increment_ctx.reset(token_offset)
+
             # The function should have been called
             assert mock_query_parse.called
 
@@ -151,18 +168,20 @@ class TestPaginationOffsetIncrement:
         # Mock the entire query_api call chain
         with patch("entsoe.query.query_api.query_and_parse") as mock_query_parse:
             mock_query_parse.return_value = []
-            
+
             # Since we're patching deeper, we can directly verify the parameters
             # passed to the actual query_api function
             from entsoe.query.query_api import query_api
-            
-            # Capture the actual call to verify offset_increment
-            query_api(
-                market.params,
-                max_days_limit=market.max_days_limit,
-                offset_increment=market.offset_increment,
-            )
-            
+
+            # Set context variables directly
+            token_max_days = decorators.max_days_limit_ctx.set(market.max_days_limit)
+            token_offset = decorators.offset_increment_ctx.set(market.offset_increment)
+            try:
+                query_api(market.params)
+            finally:
+                decorators.max_days_limit_ctx.reset(token_max_days)
+                decorators.offset_increment_ctx.reset(token_offset)
+
             # The function should have been called
             assert mock_query_parse.called
 
@@ -176,7 +195,11 @@ class TestPaginationOffsetIncrement:
         # Mock to always return data (to test we stop at 4800)
         mock_func.return_value = [{"data": "test"}]
 
-        decorated_func(params, offset_increment=100)
+        token = decorators.offset_increment_ctx.set(100)
+        try:
+            decorated_func(params)
+        finally:
+            decorators.offset_increment_ctx.reset(token)
 
         # Should have been called 49 times (0, 100, 200, ..., 4700, 4800)
         assert mock_func.call_count == 49
@@ -193,7 +216,11 @@ class TestPaginationOffsetIncrement:
         # Mock to always return data (to test we stop at 4800)
         mock_func.return_value = [{"data": "test"}]
 
-        decorated_func(params, offset_increment=200)
+        token = decorators.offset_increment_ctx.set(200)
+        try:
+            decorated_func(params)
+        finally:
+            decorators.offset_increment_ctx.reset(token)
 
         # Should have been called 25 times (0, 200, 400, ..., 4600, 4800)
         assert mock_func.call_count == 25
