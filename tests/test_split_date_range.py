@@ -172,11 +172,11 @@ class TestSplitDateRangeDecorator:
                 # Check INFO level for high-level splitting message
                 info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
                 assert any(
-                    "exceeds" in arg and "day limit" in arg and "splitting" in arg.lower()
+                    "exceeds" in arg
+                    and "day limit" in arg
+                    and "splitting" in arg.lower()
                     for arg in info_calls
-                ), (
-                    "Should log INFO that the date range is being split"
-                )
+                ), "Should log INFO that the date range is being split"
         finally:
             max_days_limit_ctx.reset(token)
 
@@ -203,11 +203,11 @@ class TestSplitDateRangeDecorator:
                 # Check INFO level for high-level splitting message
                 info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
                 assert any(
-                    "exceeds" in arg and "day limit" in arg and "splitting" in arg.lower()
+                    "exceeds" in arg
+                    and "day limit" in arg
+                    and "splitting" in arg.lower()
                     for arg in info_calls
-                ), (
-                    "Should log INFO that the date range is being split"
-                )
+                ), "Should log INFO that the date range is being split"
         finally:
             max_days_limit_ctx.reset(token)
 

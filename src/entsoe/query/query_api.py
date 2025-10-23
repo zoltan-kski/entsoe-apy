@@ -48,7 +48,9 @@ def query_core(params: dict) -> Response:
     response = get(URL, params=params_with_token, timeout=config.timeout)
 
     content_length = len(response.text) if response.text else 0
-    logger.info(f"API response received: status={response.status_code}, size={content_length} bytes")
+    logger.info(
+        f"API response received: status={response.status_code}, size={content_length} bytes"
+    )
     logger.trace(f"query_core: Exit with status {response.status_code}")
 
     return response

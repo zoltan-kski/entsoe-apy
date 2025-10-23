@@ -332,7 +332,9 @@ def retry(func):
             logger.trace(f"Retry attempt {attempt + 1}/{config.retries}")
             try:
                 result = func(*args, **kwargs)
-                logger.trace(f"retry wrapper: Exit successfully on attempt {attempt + 1}")
+                logger.trace(
+                    f"retry wrapper: Exit successfully on attempt {attempt + 1}"
+                )
                 return result
             # Catch connection errors, socket errors, and service unavailable errors
             except (RequestError, ServiceUnavailableError, UnexpectedError) as e:

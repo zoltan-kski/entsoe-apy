@@ -54,7 +54,9 @@ def check_date_range_limit(
     Returns:
         True if range exceeds limit, False otherwise
     """
-    logger.trace(f"check_date_range_limit: Enter with {period_start} to {period_end}, max_days={max_days}")
+    logger.trace(
+        f"check_date_range_limit: Enter with {period_start} to {period_end}, max_days={max_days}"
+    )
 
     start_dt = parse_entsoe_datetime(period_start)
     end_dt = parse_entsoe_datetime(period_end)
@@ -79,7 +81,9 @@ def split_date_range(period_start: int, period_end: int, max_days: int = 365) ->
     Returns:
         The pivot date (end of first segment) in YYYYMMDDHHMM format
     """
-    logger.trace(f"split_date_range: Enter with {period_start} to {period_end}, max_days={max_days}")
+    logger.trace(
+        f"split_date_range: Enter with {period_start} to {period_end}, max_days={max_days}"
+    )
 
     start_dt = parse_entsoe_datetime(period_start)
 
@@ -129,6 +133,8 @@ def extract_namespace_and_find_classes(response) -> tuple[str, type]:
 
     selected_class = matching_classes[0][1]
     logger.debug(f"Selected class: {selected_class.__name__}")
-    logger.trace(f"extract_namespace_and_find_classes: Exit with {selected_class.__name__}")
+    logger.trace(
+        f"extract_namespace_and_find_classes: Exit with {selected_class.__name__}"
+    )
 
     return namespace, selected_class
