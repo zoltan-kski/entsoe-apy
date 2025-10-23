@@ -17,6 +17,7 @@ from ..utils.utils import (
 max_days_limit_ctx: ContextVar[int] = ContextVar("max_days_limit")
 offset_increment_ctx: ContextVar[int] = ContextVar("offset_increment")
 
+
 class AcknowledgementDocumentError(Exception):
     """Raised when the API returns an acknowledgement document indicating an error."""
 
