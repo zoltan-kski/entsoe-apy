@@ -65,12 +65,10 @@ class EntsoEConfig:
         # On first initialization, remove the default loguru handler (id=0)
         # On subsequent calls, remove our previously added handler
         try:
-            if hasattr(EntsoEConfig, "_handler_id") and isinstance(
-                EntsoEConfig._handler_id, int
-            ):
+            if hasattr(EntsoEConfig, "_handler_id"):
                 # We've been initialized before, remove our previous handler
                 logger.remove(EntsoEConfig._handler_id)
-            elif not hasattr(EntsoEConfig, "_handler_id"):
+            else:
                 # First time initialization, remove the default loguru handler
                 logger.remove(0)
         except ValueError:
