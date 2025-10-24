@@ -66,14 +66,14 @@ class TestLoggingConfig:
         """Test that loguru logger is configured when EntsoEConfig is created."""
         # Mock logger.add() to return an integer handler ID
         mock_logger.add.return_value = 1
-        
+
         # Mock the _core.handlers to simulate default handler exists
         mock_logger._core.handlers = {0: None}
-        
+
         # Clear any existing _handler_id from previous tests
         if hasattr(EntsoEConfig, "_handler_id"):
             delattr(EntsoEConfig, "_handler_id")
-        
+
         EntsoEConfig(log_level="DEBUG")
 
         # Verify that logger.remove() was called to remove default handler
@@ -83,7 +83,7 @@ class TestLoggingConfig:
         mock_logger.add.assert_called_once()
         call_kwargs = mock_logger.add.call_args.kwargs
         assert call_kwargs["level"] == "DEBUG"
-        
+
         # Clean up: remove the _handler_id so it doesn't affect other tests
         if hasattr(EntsoEConfig, "_handler_id"):
             delattr(EntsoEConfig, "_handler_id")
