@@ -70,10 +70,13 @@ class EntsoEConfig:
                 logger.remove(EntsoEConfig._handler_id)
             else:
                 # First time initialization, remove the default loguru handler if it exists
-                if 0 in logger._core.handlers:
+                try:
                     logger.remove(0)
+                except ValueError:
+                    # Handler 0 doesn't exist or was already removed, that's fine
+                    pass
         except ValueError:
-            # Handler doesn't exist or was already removed, that's fine
+            # Our handler doesn't exist or was already removed, that's fine
             pass
 
         # Add new handler and store the ID
