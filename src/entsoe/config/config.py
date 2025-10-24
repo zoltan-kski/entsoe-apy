@@ -5,8 +5,7 @@ import sys
 from typing import Callable, Literal, Optional, Union
 from uuid import UUID
 
-from loguru._logger import Core as _Core
-from loguru._logger import Logger as _Logger
+from loguru._logger import Core as _Core, Logger as _Logger
 
 # Type alias for log levels
 LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
@@ -39,18 +38,16 @@ def set_log_level(level: LogLevel) -> None:
 
     Args:
         level: Log level (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL)
-    
+
     Raises:
         ValueError: If an invalid log level is provided
     """
     global _handler_id
-    
+
     # Validate log level (runtime check, as Literal is only for type checking)
     valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
     if level not in valid_levels:
-        raise ValueError(
-            f"Invalid log_level '{level}'. Must be one of: {valid_levels}"
-        )
+        raise ValueError(f"Invalid log_level '{level}'. Must be one of: {valid_levels}")
 
     # Remove the current handler if it exists
     try:
@@ -58,7 +55,7 @@ def set_log_level(level: LogLevel) -> None:
     except ValueError:
         # Handler doesn't exist, that's fine
         pass
-    
+
     # Add a new handler with the updated level
     _handler_id = logger.add(
         sink=sys.stderr,
@@ -66,7 +63,6 @@ def set_log_level(level: LogLevel) -> None:
         colorize=True,
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     )
-
 
 
 class EntsoEConfig:

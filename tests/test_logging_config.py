@@ -61,7 +61,7 @@ class TestLoggingConfig:
 
         # Since we now have an independent logger, we don't remove handler 0
         # Instead, we call set_log_level which should remove and re-add
-        
+
         EntsoEConfig(log_level="DEBUG")
 
         # Verify that logger.remove() was called (our independent logger's handler)

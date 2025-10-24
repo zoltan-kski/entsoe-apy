@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 import inspect
 from xml.etree import ElementTree as ET
 
-from ..config.config import logger
-
 import entsoe.xml_models as xml_models
+
+from ..config.config import logger
 
 
 class RangeLimitError(Exception):

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Quick test to verify the fixes work."""
 
-from entsoe.config.config import EntsoEConfig, set_log_level
 import sys
+
+from entsoe.config.config import EntsoEConfig, set_log_level
 
 print("Testing validation and type safety...")
 print("=" * 60)
@@ -12,7 +13,7 @@ print("\n1. Testing valid log levels:")
 try:
     config = EntsoEConfig(log_level="DEBUG")
     print(f"✓ EntsoEConfig(log_level='DEBUG') works: {config.log_level}")
-    
+
     set_log_level("INFO")
     print("✓ set_log_level('INFO') works")
 except Exception as e:
