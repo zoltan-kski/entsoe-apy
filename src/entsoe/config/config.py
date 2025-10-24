@@ -62,8 +62,28 @@ class EntsoEConfig:
             )
 
         # Configure loguru logger level
-        logger.remove()
-        logger.add(sink=sys.stdout, level=log_level.upper(), colorize=True)
+        # On first initialization, remove the default loguru handler (id=0)
+        # On subsequent calls, remove our previously added handler
+        try:
+            if hasattr(EntsoEConfig, "_handler_id") and isinstance(
+                EntsoEConfig._handler_id, int
+            ):
+                # We've been initialized before, remove our previous handler
+                logger.remove(EntsoEConfig._handler_id)
+            elif not hasattr(EntsoEConfig, "_handler_id"):
+                # First time initialization, remove the default loguru handler
+                logger.remove(0)
+        except ValueError:
+            # Handler doesn't exist or was already removed, that's fine
+            pass
+
+        # Add new handler and store the ID
+        EntsoEConfig._handler_id = logger.add(
+            sink=sys.stdout,
+            level=log_level.upper(),
+            colorize=True,
+        )
+
         # Handle security token
         env_token = os.getenv("ENTSOE_API") or None
         if security_token is None and env_token is not None:
