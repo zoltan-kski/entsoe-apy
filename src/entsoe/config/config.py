@@ -2,10 +2,71 @@
 
 import os
 import sys
-from typing import Callable, Optional, Union
+from typing import Callable, Literal, Optional, Union
 from uuid import UUID
 
-from loguru import logger
+from loguru._logger import Core as _Core
+from loguru._logger import Logger as _Logger
+
+# Type alias for log levels
+LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+
+# Create an independent Loguru logger instance for this package
+logger = _Logger(
+    core=_Core(),
+    exception=None,
+    depth=0,
+    record=False,
+    lazy=False,
+    colors=False,
+    raw=False,
+    capture=True,
+    patchers=[],
+    extra={},
+)
+
+# Add default sink to sys.stderr with SUCCESS level
+_handler_id = logger.add(
+    sink=sys.stderr,
+    level="SUCCESS",
+    colorize=True,
+)
+
+
+def set_log_level(level: LogLevel) -> None:
+    """
+    Change the log level of the entsoe logger.
+
+    Args:
+        level: Log level (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL)
+    
+    Raises:
+        ValueError: If an invalid log level is provided
+    """
+    global _handler_id
+    
+    # Validate log level (runtime check, as Literal is only for type checking)
+    valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+    if level not in valid_levels:
+        raise ValueError(
+            f"Invalid log_level '{level}'. Must be one of: {valid_levels}"
+        )
+
+    # Remove the current handler if it exists
+    try:
+        logger.remove(_handler_id)
+    except ValueError:
+        # Handler doesn't exist, that's fine
+        pass
+    
+    # Add a new handler with the updated level
+    _handler_id = logger.add(
+        sink=sys.stderr,
+        level=level,
+        colorize=True,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
+
 
 
 class EntsoEConfig:
@@ -26,7 +87,7 @@ class EntsoEConfig:
         timeout: int = 5,
         retries: int = 5,
         retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
-        log_level: str = "SUCCESS",
+        log_level: LogLevel = "SUCCESS",
     ):
         """
         Initialize configuration with global options.
@@ -46,45 +107,8 @@ class EntsoEConfig:
             ValueError: If security_token is not provided and ENTSOE_API environment
                        variable is not set.
         """
-        # Validate log level
-        valid_levels = [
-            "TRACE",
-            "DEBUG",
-            "INFO",
-            "SUCCESS",
-            "WARNING",
-            "ERROR",
-            "CRITICAL",
-        ]
-        if log_level.upper() not in valid_levels:
-            raise ValueError(
-                f"Invalid log_level '{log_level}'. Must be one of: {valid_levels}"
-            )
-
-        # Configure loguru logger level
-        # On first initialization, remove the default loguru handler (id=0)
-        # On subsequent calls, remove our previously added handler
-        try:
-            if hasattr(EntsoEConfig, "_handler_id"):
-                # We've been initialized before, remove our previous handler
-                logger.remove(EntsoEConfig._handler_id)
-            else:
-                # First time initialization, remove the default loguru handler if it exists
-                try:
-                    logger.remove(0)
-                except ValueError:
-                    # Handler 0 doesn't exist or was already removed, that's fine
-                    pass
-        except ValueError:
-            # Our handler doesn't exist or was already removed, that's fine
-            pass
-
-        # Add new handler and store the ID
-        EntsoEConfig._handler_id = logger.add(
-            sink=sys.stdout,
-            level=log_level.upper(),
-            colorize=True,
-        )
+        # Set the log level using our independent logger's set_log_level function
+        set_log_level(log_level)
 
         # Handle security token
         env_token = os.getenv("ENTSOE_API") or None
@@ -118,7 +142,7 @@ class EntsoEConfig:
         else:
             # It's already a callable function (including the default)
             self.retry_delay = retry_delay
-        self.log_level = log_level.upper()
+        self.log_level = log_level
 
     def validate_security_token(self) -> None:
         """
@@ -178,7 +202,7 @@ def set_config(
     timeout: int = 5,
     retries: int = 5,
     retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
-    log_level: str = "SUCCESS",
+    log_level: LogLevel = "SUCCESS",
 ) -> None:
     """
     Set the global configuration.

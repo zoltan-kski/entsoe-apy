@@ -5,10 +5,9 @@ from time import sleep
 import zipfile
 
 from httpx import RequestError, Response
-from loguru import logger
 from pydantic import BaseModel
 
-from ..config.config import get_config
+from ..config.config import get_config, logger
 from ..utils.utils import (
     check_date_range_limit,
     split_date_range as split_date_range_util,

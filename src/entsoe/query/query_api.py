@@ -1,9 +1,8 @@
 from httpx import Response, get
-from loguru import logger
 from pydantic import BaseModel
 from xsdata_pydantic.bindings import XmlParser
 
-from ..config.config import get_config
+from ..config.config import get_config, logger
 from ..utils.utils import extract_namespace_and_find_classes
 from .decorators import (
     check_service_unavailable,

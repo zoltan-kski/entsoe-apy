@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import inspect
 from xml.etree import ElementTree as ET
 
-from loguru import logger
+from ..config.config import logger
 
 import entsoe.xml_models as xml_models
 
