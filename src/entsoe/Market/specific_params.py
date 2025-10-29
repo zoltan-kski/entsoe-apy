@@ -101,7 +101,6 @@ class TotalNominatedCapacity(Market):
             business_type="B08",  # Fixed: Total nominated capacity
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -154,7 +153,6 @@ class ImplicitAllocationsOfferedCapacity(Market):
             auction_type="A01",  # Fixed: Implicit
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional parameters
@@ -268,7 +266,6 @@ class TotalCapacityAllocated(Market):
             contract_market_agreement_type=contract_market_agreement_type,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -321,7 +318,6 @@ class ExplicitAllocationsOfferedCapacity(Market):
             auction_category=auction_category,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional classification parameter
@@ -374,7 +370,6 @@ class FlowBasedAllocations(Market):
             auction_type="A01",  # Fixed: Implicit
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -493,7 +488,6 @@ class ExplicitAllocationsUseTransferCapacity(Market):
             auction_category=auction_category,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional classification parameter
@@ -551,7 +545,6 @@ class ExplicitAllocationsAuctionRevenue(Market):
             contract_market_agreement_type=contract_market_agreement_type,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -610,7 +603,6 @@ class TransferCapacitiesThirdCountriesExplicit(Market):
             auction_category=auction_category,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional classification parameter
@@ -666,7 +658,6 @@ class TransferCapacitiesThirdCountriesImplicit(Market):
             auction_type="A01",  # Fixed: Implicit
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add optional classification parameter
@@ -767,5 +758,4 @@ class FlowBasedAllocationsLegacy(Market):
             auction_type="A01",  # Fixed: Implicit
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)

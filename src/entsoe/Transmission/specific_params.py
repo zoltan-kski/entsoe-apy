@@ -52,7 +52,6 @@ class TotalNominatedCapacity(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -100,7 +99,6 @@ class ImplicitAllocationsOfferedCapacity(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters for implicit allocations
@@ -151,7 +149,6 @@ class ExplicitAllocationsOfferedCapacity(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters for explicit allocations
@@ -203,7 +200,6 @@ class TotalCapacityAlreadyAllocated(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters
@@ -251,7 +247,6 @@ class CrossBorderPhysicalFlows(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
 
@@ -297,7 +292,6 @@ class CommercialSchedules(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters
@@ -346,7 +340,6 @@ class ForecastedTransferCapacities(Transmission):
             in_domain=in_domain,
         )
 
-        
         self.validate_eic_equality(in_domain, out_domain, must_be_equal=False)
 
         # Add specific parameters
