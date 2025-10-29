@@ -157,7 +157,9 @@ class TestRetryDecorator:
                     always_failing_function()
 
         # Verify error was logged
-        mock_logger.error.assert_called_once_with("All 3 retry attempts failed. You may use entsoe.config.set_config(log_level=\"DEBUG\") for more details.")
+        mock_logger.error.assert_called_once_with(
+            'All 3 retry attempts failed. You may use entsoe.config.set_config(log_level="DEBUG") for more details.'
+        )
 
     def test_retry_decorator_different_httpx_errors(self):
         """Test that retry decorator handles different types of httpx errors."""
