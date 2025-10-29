@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from loguru import logger
 from pydantic import BaseModel
+
+from ..config.config import logger
 
 
 def _deduplicate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

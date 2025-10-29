@@ -5,10 +5,9 @@ from time import sleep
 import zipfile
 
 from httpx import RequestError, Response
-from loguru import logger
 from pydantic import BaseModel
 
-from ..config.config import get_config
+from ..config.config import get_config, logger
 from ..utils.utils import (
     check_date_range_limit,
     split_date_range as split_date_range_util,
@@ -216,14 +215,14 @@ def handle_acknowledgement(func):
             reason = xml_model.reason[0].text
 
             if "No matching data found" in reason:
-                logger.info("No matching data found")
+                logger.info("Acknowledgement: No matching data found")
                 logger.trace("handle_acknowledgement wrapper: Exit with None")
                 return None
             elif "Unexpected error occurred" in reason:
-                logger.error(f"Unexpected error in acknowledgement: {reason}")
-                raise UnexpectedError(reason)
+                logger.info(reason)
+                raise UnexpectedError("Acknowledgement: Unexpected error occurred.")
             else:
-                logger.error(f"Acknowledgement error: {reason}")
+                logger.error(f"Acknowledgement: {reason}")
                 raise AcknowledgementDocumentError(reason)
 
         logger.trace("handle_acknowledgement wrapper: Exit with xml_model")
@@ -339,19 +338,23 @@ def retry(func):
             # Catch connection errors, socket errors, and service unavailable errors
             except (RequestError, ServiceUnavailableError, UnexpectedError) as e:
                 last_exception = e
-                logger.warning(
-                    f"Retry attempt {attempt + 1}/{config.retries} failed: {e}. "
-                    f"Retrying in {config.retry_delay(attempt)}s..."
-                )
-                if attempt < config.retries - 1:  # Don't sleep on the last attempt
+                if attempt < config.retries - 1:
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{config.retries} failed: {e} "
+                        f"Retrying in {config.retry_delay(attempt)}s..."
+                    )
                     sleep(config.retry_delay(attempt))
                 continue
 
         # If we've exhausted all retries, raise the last exception
-        logger.error(f"All {config.retries} retry attempts failed")
+        logger.error(
+            f'All {config.retries} retry attempts failed. You may use entsoe.config.set_config(log_level="DEBUG") for more details.'
+        )
         if last_exception:
             raise last_exception
         else:
-            raise RuntimeError("All retry attempts failed with unknown error")
+            raise RuntimeError(
+                'All retry attempts failed with unknown error. You may use entsoe.config.set_config(log_level="DEBUG") for more details.'
+            )
 
     return retry_wrapper

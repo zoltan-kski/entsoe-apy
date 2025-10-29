@@ -140,7 +140,7 @@ class TestRetryDecorator:
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
         warning_call = mock_logger.warning.call_args[0][0]
-        assert "Retry attempt 1/3 failed" in warning_call
+        assert "Attempt 1/3 failed" in warning_call
         assert "First failure" in warning_call
         assert "Retrying in 1s" in warning_call
 
@@ -157,7 +157,9 @@ class TestRetryDecorator:
                     always_failing_function()
 
         # Verify error was logged
-        mock_logger.error.assert_called_once_with("All 3 retry attempts failed")
+        mock_logger.error.assert_called_once_with(
+            'All 3 retry attempts failed. You may use entsoe.config.set_config(log_level="DEBUG") for more details.'
+        )
 
     def test_retry_decorator_different_httpx_errors(self):
         """Test that retry decorator handles different types of httpx errors."""
