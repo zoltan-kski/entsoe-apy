@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 import inspect
 from xml.etree import ElementTree as ET
 
-from loguru import logger
-
 import entsoe.xml_models as xml_models
+
+from ..config.config import logger
 
 
 class RangeLimitError(Exception):
@@ -54,9 +54,8 @@ def check_date_range_limit(
     Returns:
         True if range exceeds limit, False otherwise
     """
-    logger.debug(
-        f"Checking date range limit: {period_start} to {period_end}, "
-        f"max_days: {max_days}"
+    logger.trace(
+        f"check_date_range_limit: Enter with {period_start} to {period_end}, max_days={max_days}"
     )
 
     start_dt = parse_entsoe_datetime(period_start)
@@ -65,6 +64,7 @@ def check_date_range_limit(
 
     exceeds_limit = diff.days > max_days
     logger.debug(f"Date range spans {diff.days} days, exceeds limit: {exceeds_limit}")
+    logger.trace(f"check_date_range_limit: Exit with {exceeds_limit}")
 
     return exceeds_limit
 
@@ -81,8 +81,8 @@ def split_date_range(period_start: int, period_end: int, max_days: int = 365) ->
     Returns:
         The pivot date (end of first segment) in YYYYMMDDHHMM format
     """
-    logger.debug(
-        f"Splitting date range: {period_start} to {period_end} at {max_days} days"
+    logger.trace(
+        f"split_date_range: Enter with {period_start} to {period_end}, max_days={max_days}"
     )
 
     start_dt = parse_entsoe_datetime(period_start)
@@ -93,11 +93,13 @@ def split_date_range(period_start: int, period_end: int, max_days: int = 365) ->
     period_pivot = format_entsoe_datetime(pivot_dt)
 
     logger.debug(f"Split at {period_pivot}")
+    logger.trace(f"split_date_range: Exit with {period_pivot}")
 
     return period_pivot
 
 
 def extract_namespace_and_find_classes(response) -> tuple[str, type]:
+    logger.trace("extract_namespace_and_find_classes: Enter")
     logger.debug("Extracting namespace from XML response")
 
     root = ET.fromstring(response.text)
@@ -119,7 +121,7 @@ def extract_namespace_and_find_classes(response) -> tuple[str, type]:
             if obj.Meta.namespace == namespace:
                 matching_classes.append((name, obj))
 
-    logger.debug(f"Found {len(matching_classes)} matching classes for namespace")
+    logger.trace(f"Found {len(matching_classes)} matching classes for namespace")
 
     if len(matching_classes) == 0:
         raise ValueError(f"No classes found matching namespace '{namespace}'")
@@ -131,5 +133,8 @@ def extract_namespace_and_find_classes(response) -> tuple[str, type]:
 
     selected_class = matching_classes[0][1]
     logger.debug(f"Selected class: {selected_class.__name__}")
+    logger.trace(
+        f"extract_namespace_and_find_classes: Exit with {selected_class.__name__}"
+    )
 
     return namespace, selected_class

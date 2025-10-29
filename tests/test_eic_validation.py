@@ -124,16 +124,16 @@ class TestEICValidation:
 
     def test_valid_eic_construction_succeeds(self):
         """Test that construction with valid EIC codes succeeds."""
-        # Should succeed with valid EIC codes
+        # Should succeed with valid and matching EIC codes
         energy_prices = EnergyPrices(
             period_start=202012312300,
             period_end=202101022300,
             in_domain="10Y1001A1001A82H",
-            out_domain="10YGB----------A",
+            out_domain="10Y1001A1001A82H",  # Must be same for EnergyPrices
         )
 
         assert energy_prices.params["in_Domain"] == "10Y1001A1001A82H"
-        assert energy_prices.params["out_Domain"] == "10YGB----------A"
+        assert energy_prices.params["out_Domain"] == "10Y1001A1001A82H"
 
     def test_valid_cross_border_balancing_construction(self):
         """Test that construction with valid EIC codes succeeds for specific classes."""
