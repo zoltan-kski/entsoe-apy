@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Literal, Optional, Union, get_args
 from uuid import UUID
 
 from loguru._logger import Core as _Core, Logger as _Logger
@@ -45,7 +45,7 @@ def set_log_level(level: LogLevel) -> None:
     global _handler_id
 
     # Validate log level (runtime check, as Literal is only for type checking)
-    valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+    valid_levels = tuple(get_args(LogLevel))
     if level not in valid_levels:
         raise ValueError(f"Invalid log_level '{level}'. Must be one of: {valid_levels}")
 
