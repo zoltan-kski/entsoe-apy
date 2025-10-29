@@ -219,10 +219,10 @@ def handle_acknowledgement(func):
                 logger.trace("handle_acknowledgement wrapper: Exit with None")
                 return None
             elif "Unexpected error occurred" in reason:
-                logger.error(f"Unexpected error in acknowledgement: {reason}")
+                logger.error(reason)
                 raise UnexpectedError(reason)
             else:
-                logger.error(f"Acknowledgement error: {reason}")
+                logger.error(f"Acknowledgement: {reason}")
                 raise AcknowledgementDocumentError(reason)
 
         logger.trace("handle_acknowledgement wrapper: Exit with xml_model")
