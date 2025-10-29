@@ -75,10 +75,6 @@ class TestLoggingConfig:
         call_kwargs = mock_logger.add.call_args.kwargs
         assert call_kwargs["level"] == "DEBUG"
 
-        # Clean up: remove the _handler_id so it doesn't affect other tests
-        if hasattr(EntsoEConfig, "_handler_id"):
-            delattr(EntsoEConfig, "_handler_id")
-
     def test_existing_functionality_preserved(self):
         """Test that existing functionality is preserved with log_level parameter."""
 
