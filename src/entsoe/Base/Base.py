@@ -77,6 +77,40 @@ class Base:
                 f"EIC code not found in mappings."
             )
 
+    def validate_eic_equality(
+        self,
+        in_domain: Optional[str],
+        out_domain: Optional[str],
+        must_be_equal: bool,
+    ) -> None:
+        """
+        Validate that in_domain and out_domain are equal or different as required.
+
+        Args:
+            in_domain: Input domain/bidding zone (EIC code)
+            out_domain: Output domain/bidding zone (EIC code)
+            must_be_equal: If True, validates that codes are equal.
+                          If False, validates that codes are different.
+
+        Raises:
+            ValidationError: If the equality constraint is not satisfied
+        """
+        # Skip validation if either parameter is None
+        if in_domain is None or out_domain is None:
+            return
+
+        if must_be_equal and in_domain != out_domain:
+            raise ValidationError(
+                f"For this endpoint, in_domain and out_domain must be the same. "
+                f"Got in_domain='{in_domain}' and out_domain='{out_domain}'."
+            )
+
+        if not must_be_equal and in_domain == out_domain:
+            raise ValidationError(
+                f"For this endpoint, in_domain and out_domain must be different. "
+                f"Got in_domain='{in_domain}' and out_domain='{out_domain}'."
+            )
+
     def add_optional_param(self, key: str, value: Any) -> None:
         """
         Add an optional parameter to the params dictionary if value is not None.
