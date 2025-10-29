@@ -215,12 +215,12 @@ def handle_acknowledgement(func):
             reason = xml_model.reason[0].text
 
             if "No matching data found" in reason:
-                logger.info("No matching data found")
+                logger.info("Acknowledgement: No matching data found")
                 logger.trace("handle_acknowledgement wrapper: Exit with None")
                 return None
             elif "Unexpected error occurred" in reason:
-                logger.error(reason)
-                raise UnexpectedError(reason)
+                logger.info(reason)
+                raise UnexpectedError("Acknowledgement: Unexpected error occurred.")
             else:
                 logger.error(f"Acknowledgement: {reason}")
                 raise AcknowledgementDocumentError(reason)
@@ -338,11 +338,11 @@ def retry(func):
             # Catch connection errors, socket errors, and service unavailable errors
             except (RequestError, ServiceUnavailableError, UnexpectedError) as e:
                 last_exception = e
-                logger.warning(
-                    f"Retry attempt {attempt + 1}/{config.retries} failed: {e}. "
-                    f"Retrying in {config.retry_delay(attempt)}s..."
-                )
-                if attempt < config.retries - 1:  # Don't sleep on the last attempt
+                if attempt < config.retries - 1:
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{config.retries} failed: {e}. "
+                        f"Retrying in {config.retry_delay(attempt)}s..."
+                    )
                     sleep(config.retry_delay(attempt))
                 continue
 

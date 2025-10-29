@@ -140,7 +140,7 @@ class TestRetryDecorator:
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
         warning_call = mock_logger.warning.call_args[0][0]
-        assert "Retry attempt 1/3 failed" in warning_call
+        assert "Attempt 1/3 failed" in warning_call
         assert "First failure" in warning_call
         assert "Retrying in 1s" in warning_call
 
