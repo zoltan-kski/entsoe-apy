@@ -340,17 +340,17 @@ def retry(func):
                 last_exception = e
                 if attempt < config.retries - 1:
                     logger.warning(
-                        f"Attempt {attempt + 1}/{config.retries} failed: {e}. "
+                        f"Attempt {attempt + 1}/{config.retries} failed: {e} "
                         f"Retrying in {config.retry_delay(attempt)}s..."
                     )
                     sleep(config.retry_delay(attempt))
                 continue
 
         # If we've exhausted all retries, raise the last exception
-        logger.error(f"All {config.retries} retry attempts failed")
+        logger.error(f"All {config.retries} retry attempts failed. You may use entsoe.config.set_config(log_level=\"DEBUG\") for more details.")
         if last_exception:
             raise last_exception
         else:
-            raise RuntimeError("All retry attempts failed with unknown error")
+            raise RuntimeError("All retry attempts failed with unknown error. You may use entsoe.config.set_config(log_level=\"DEBUG\") for more details.")
 
     return retry_wrapper

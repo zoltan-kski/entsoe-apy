@@ -110,7 +110,7 @@ class EntsoEConfig:
         env_token = os.getenv("ENTSOE_API") or None
         if security_token is None and env_token is not None:
             security_token = env_token
-            logger.success("Security token loaded from environment")
+            logger.success("Security token loaded from environment.")
 
         if security_token is None:
             logger.warning(
@@ -124,7 +124,7 @@ class EntsoEConfig:
             try:
                 # Validate UUID format
                 UUID(security_token)
-                logger.trace("Security token format validated successfully")
+                logger.trace("Security token format validated successfully.")
             except ValueError:
                 logger.error("Invalid security_token format. Must be a valid UUID.")
 
