@@ -29,6 +29,10 @@ records = add_timestamps(records)
 df = DataFrame(records)
 ```
 
+!!! note
+    The [`extract_records`](utilities.md#entsoe.utils.extract_records) function automatically removes `m_rid` and `time_series.m_rid` metadata fields. This mitigates duplicates due to internal splitting of queries, see [#68](https://github.com/BerriJ/entsoe-apy/issues/68). You may extend the `ignore_fields` parameter as needed (for exampe with `"created_date_time", "time_period_time_interval.start","time_period_time_interval.end"`).
+     See [`extract_records`](utilities.md#entsoe.utils.extract_records) for more details.
+
 See also [Utilities](./utilities.md) for more details on the utility functions.
 
 ### Extracting Specific Domains
