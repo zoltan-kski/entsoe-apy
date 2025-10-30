@@ -67,6 +67,10 @@ This tree shows the hierarchical structure of the package with direct exports an
   │   ├── TransferCapacitiesThirdCountriesExplicit (type)
   │   └── TransferCapacitiesThirdCountriesImplicit (type)
   │
+├── MasterData/
+  ├── Direct exports (1 items):
+  │   └── ProductionandGenerationUnits (type)
+  │
 ├── OMI/
   ├── Direct exports (1 items):
   │   └── OtherMarketInformation (type)
@@ -92,38 +96,64 @@ This tree shows the hierarchical structure of the package with direct exports an
   │   ├── FlowBasedAllocations (type)
   │   └── UnavailabilityOffshoreGridInfrastructure (type)
   │
+├── codes/
+  ├── Direct exports (38 items):
+  │   ├── StandardAllocationModeTypeList (EnumType)
+  │   ├── StandardAnalogTypeList (EnumType)
+  │   ├── StandardAssetTypeList (EnumType)
+  │   ├── StandardAuctionTypeList (EnumType)
+  │   ├── StandardBusinessTypeList (EnumType)
+  │   ├── StandardCategoryTypeList (EnumType)
+  │   ├── StandardClassificationTypeList (EnumType)
+  │   ├── StandardCodingSchemeTypeList (EnumType)
+  │   ├── StandardContractTypeList (EnumType)
+  │   ├── StandardCoordinateSystemTypeList (EnumType)
+  │   ├── StandardCurrencyTypeList (EnumType)
+  │   ├── StandardCurveTypeList (EnumType)
+  │   ├── StandardDirectionTypeList (EnumType)
+  │   ├── StandardDocumentTypeList (EnumType)
+  │   ├── StandardEicTypeList (EnumType)
+  │   ├── StandardEnergyProductTypeList (EnumType)
+  │   ├── StandardFlowCommodityTypeList (EnumType)
+  │   ├── StandardFuelTypeList (EnumType)
+  │   ├── StandardHVDCModeTypeList (EnumType)
+  │   └── StandardIndicatorTypeList (EnumType)
+  │   └── ... and 18 more
+  │
 ├── config/
   ├── Direct exports (2 items):
   │   ├── set_config (function)
   │   └── get_config (function)
   │
 ├── utils/
-  ├── Direct exports (2 items):
-  │   ├── ts_to_dict (function)
-  │   └── mappings (dict)
+  ├── Direct exports (4 items):
+  │   ├── mappings (dict)
+  │   ├── extract_records (function)
+  │   ├── add_timestamps (function)
+  │   └── calculate_timestamp (function)
   │
 └── xml_models/
   ├── Direct exports (2097 items):
-  │   ├── V7AcknowledgementMarketDocument (type)
-  │   ├── V7EsmpDateTimeInterval (type)
-  │   ├── V7PartyIdString (type)
-  │   ├── V7Reason (type)
-  │   ├── V7TimeSeries (type)
-  │   ├── V7TimePeriod (type)
-  │   ├── V8AcknowledgementMarketDocument (type)
-  │   ├── V8EsmpDateTimeInterval (type)
-  │   ├── V8PartyIdString (type)
-  │   ├── V8Reason (type)
-  │   ├── V8TimeSeries (type)
-  │   ├── V8TimePeriod (type)
-  │   ├── AcknowledgementMarketDocument (type)
-  │   ├── EsmpDateTimeInterval (type)
-  │   ├── PartyIdString (type)
-  │   ├── Reason (type)
-  │   ├── TimeSeries (type)
-  │   ├── TimePeriod (type)
-  │   ├── Type0AnomalyReportMarketDocument (type)
-  │   └── Type0AnomalyTimeSeries (type)
+  │   ├── V7AcknowledgementMarketDocument (ModelMetaclass)
+  │   ├── V7EsmpDateTimeInterval (ModelMetaclass)
+  │   ├── V7PartyIdString (ModelMetaclass)
+  │   ├── V7Reason (ModelMetaclass)
+  │   ├── V7TimeSeries (ModelMetaclass)
+  │   ├── V7TimePeriod (ModelMetaclass)
+  │   ├── V8AcknowledgementMarketDocument (ModelMetaclass)
+  │   ├── V8EsmpDateTimeInterval (ModelMetaclass)
+  │   ├── V8PartyIdString (ModelMetaclass)
+  │   ├── V8Reason (ModelMetaclass)
+  │   ├── V8TimeSeries (ModelMetaclass)
+  │   ├── V8TimePeriod (ModelMetaclass)
+  │   ├── AcknowledgementMarketDocument (ModelMetaclass)
+  │   ├── EsmpDateTimeInterval (ModelMetaclass)
+  │   ├── PartyIdString (ModelMetaclass)
+  │   ├── Reason (ModelMetaclass)
+  │   ├── TimeSeries (ModelMetaclass)
+  │   ├── TimePeriod (ModelMetaclass)
+  │   ├── Type0AnomalyReportMarketDocument (ModelMetaclass)
+  │   └── Type0AnomalyTimeSeries (ModelMetaclass)
   │   └── ... and 2077 more
   │
 ```

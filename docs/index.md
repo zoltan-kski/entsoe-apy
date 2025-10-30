@@ -4,8 +4,7 @@ A Python library for accessing ENTSO-E Transparency Platform API endpoints.
 
 ## Highlights
 
-- Easy access to ENTSO-E Transparency Platform API endpoints
-- Supports all major API functionalities
+- Easy access to all ENTSO-E Transparency Platform API endpoints
 - Well-documented, easy to use and highly consistent with the API
 - Automatically splits up large requests into multiple smaller calls to the API
 - Intelligent retry mechanism with exponential backoff for connection errors and service unavailability
@@ -13,7 +12,7 @@ A Python library for accessing ENTSO-E Transparency Platform API endpoints.
 
 ## Install
 
-Install the package from pypi using pip:
+Install the package from [pypi](https://pypi.org/project/entsoe-apy/) using pip:
 
 ```sh
 pip install entsoe-apy
@@ -33,26 +32,20 @@ After initializing the class, we can query the data using the query_data method.
 
 ```python
 from pandas import DataFrame
+from entsoe.Market import EnergyPrices
+from entsoe.utils import extract_records, add_timestamps
 
-from entsoe.Market import EnergyPrices  # from the Market Group
-from entsoe.utils import extract_records
+# Query energy prices
+result = EnergyPrices(
+    in_domain="10YNL----------L", # Netherlands
+    out_domain="10YNL----------L",
+    period_start=202012312300,
+    period_end=202101022300,
+).query_api()
 
-EIC = "10Y1001A1001A82H"  # "DE-LU" bidding zone
-
-period_start = 201512312300
-period_end = 202107022300
-
-ep = EnergyPrices(
-    in_domain=EIC,
-    out_domain=EIC,
-    period_start=period_start,
-    period_end=period_end,
-    contract_market_agreement_type="A01",
-)
-result = ep.query_api()
-
+# Convert to DataFrame-ready records
 records = extract_records(result)
-
+records = add_timestamps(records)
 df = DataFrame(records)
 ```
 
@@ -65,13 +58,14 @@ df = DataFrame(records)
 | 2018-09-30T22:00Z          |                                 5 |                                  46.5 | A62                       | EUR                            | MWH                                 | PT15M                         |
 
 
-
 The structure of the `result` object depends on the queried data. See the [examples](./examples.md) for more details.
 
 ## Next Steps
 
 - [ENTSOE](./ENTSOE/index.md) - Class documentation
+- [Mappings](./mappings.md) - EIC codes and area mappings
 - [Examples](./examples.md) - Practical examples and use cases
+- [Utilities](./utilities.md) - Utility functions for data processing
 
 
 ## Contributions
