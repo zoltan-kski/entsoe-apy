@@ -4,19 +4,19 @@ nav:
   - Home: index.md
   - Configuration: configuration.md
   - ENTSOE:
-    - ENTSOE Overview: ENTSOE/index.md
-    - Market: ENTSOE/market.md
-    - Load: ENTSOE/load.md
-    - Generation: ENTSOE/generation.md
-    - Transmission: ENTSOE/transmission.md
-    - Outages: ENTSOE/outages.md
-    - Balancing: ENTSOE/balancing.md
-    - OMI: ENTSOE/omi.md
-  - Package Structure: entsoe_export_tree.md
+      - ENTSOE Overview: ENTSOE/index.md
+      - Market: ENTSOE/market.md
+      - Load: ENTSOE/load.md
+      - Generation: ENTSOE/generation.md
+      - Transmission: ENTSOE/transmission.md
+      - Outages: ENTSOE/outages.md
+      - Balancing: ENTSOE/balancing.md
+      - OMI: ENTSOE/omi.md
+      - Master Data: ENTSOE/master_data.md
   - Examples: examples.md
+  - Utilities: utilities.md
   - Mappings: mappings.md
   - Codes: codes.md
-  - Development: development.md
   - Issues [Github]: "https://github.com/BerriJ/entsoe-apy/issues"
   - Source [Github]: "https://github.com/BerriJ/entsoe-apy"
   - License [Github]: "https://github.com/BerriJ/entsoe-apy/blob/main/LICENSE"
@@ -28,7 +28,7 @@ theme:
     - search.highlight
     - search.suggest
     - navigation.indexes
-  palette: 
+  palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -47,23 +47,23 @@ theme:
         name: Switch to light mode
 
 plugins:
-- search
-- mkdocstrings:
-    handlers:
-      python:
-        paths: [src]
-        options:
-          heading_level: 2
-          line_length: 80
-          show_source: false
-          members: true
-          show_root_heading: true
-          show_signature: true
-          separate_signature: true
-          show_signature_annotations: true
-          members_order: source
-          docstring_section_style: list
-          merge_init_into_class: true
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            heading_level: 2
+            line_length: 80
+            show_source: false
+            members: true
+            show_root_heading: true
+            show_signature: true
+            separate_signature: true
+            show_signature_annotations: true
+            members_order: source
+            docstring_section_style: list
+            merge_init_into_class: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -82,4 +82,3 @@ markdown_extensions:
       base_path: .
       relative_path: true
       absolute: false
-

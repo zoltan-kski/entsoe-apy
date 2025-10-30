@@ -5,6 +5,6 @@ All queries must be made using "EIC" codes. The below mappings can be used, for 
 Two changes were made:
 
 - `CTY` was added as an identifier for countries, as they did not have one before.
-- Some country names where replaced by their short codes ("Azerbaijan (AZ)" -> "AZ") to merge certain concise entries in the dict, like the one for Azerbaijan which is a Biddingzone, Control Area and Country at the same time.
+- A small number of country names were replaced by their short codes ("Azerbaijan (AZ)" -> "AZ") to merge certain entries in the dict, like the one for Azerbaijan which is a Biddingzone, Control Area and Country at the same time.
 
 ::: entsoe.utils.mappings
