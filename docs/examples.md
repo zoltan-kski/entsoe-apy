@@ -2,6 +2,8 @@
 
 This page provides practical examples for using the ENTSO-E API Python package.
 
+All available endpoints are listed in [ENTSOE Overview](./ENTSOE/index.md) and a dictionary with EIC codes and their corresponding names and tags can be found in [Mappings](./mappings.md).
+
 ## Working with API Results
 
 ### Converting Results to DataFrames
@@ -11,29 +13,27 @@ All API results are returned as Pydantic models with nested structures. To conve
 ```python
 from pandas import DataFrame
 from entsoe.Market import EnergyPrices
-from entsoe.utils import extract_records
+from entsoe.utils import extract_records, add_timestamps
 
 # Query energy prices
 result = EnergyPrices(
-    in_domain="10Y1001A1001A82H",  # DE-LU
-    out_domain="10Y1001A1001A82H",
+    in_domain="10YNL----------L", # Netherlands
+    out_domain="10YNL----------L",
     period_start=202012312300,
     period_end=202101022300,
 ).query_api()
 
 # Convert to DataFrame-ready records
 records = extract_records(result)
+records = add_timestamps(records)
 df = DataFrame(records)
-
-# Display the DataFrame
-print(df.head())
 ```
 
-The `extract_records()` function:
-- Flattens nested dictionary structures using dot notation (e.g., `time_series.period.point.position`)
-- Expands lists into multiple records (one per list element)
-- Creates cross-products when multiple lists exist at the same level
-- Handles complex nested data automatically
+!!! note
+    The [`extract_records`](utilities.md#entsoe.utils.extract_records) function automatically removes `m_rid` and `time_series.m_rid` metadata fields. This mitigates duplicates due to internal splitting of queries, see [#68](https://github.com/BerriJ/entsoe-apy/issues/68). You may extend the `ignore_fields` parameter as needed (for exampe with `"created_date_time", "time_period_time_interval.start","time_period_time_interval.end"`).
+     See [`extract_records`](utilities.md#entsoe.utils.extract_records) for more details.
+
+See also [Utilities](./utilities.md) for more details on the utility functions.
 
 ### Extracting Specific Domains
 

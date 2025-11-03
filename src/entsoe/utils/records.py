@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from loguru import logger
 from pydantic import BaseModel
+
+from ..config.config import logger
 
 
 def _deduplicate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -114,9 +115,6 @@ def extract_records(
     ignore_fields: Optional[List[str]] = [
         "m_rid",
         "time_series.m_rid",
-        "created_date_time",
-        "time_period_time_interval.start",
-        "time_period_time_interval.end",
     ],
     deduplicate: bool = True,
 ) -> List[Dict[str, int | float | str | None]]:
@@ -137,15 +135,12 @@ def extract_records(
                each BaseModel instance.
         ignore_fields: Optional list of field names to exclude from the flattened records.
                       Fields are matched by their full dotted path (e.g., "m_rid", "time_series.m_rid").
-                      Defaults to ["m_rid", "time_series.m_rid", "created_date_time",
-                      "time_period_time_interval.start", "time_period_time_interval.end"].
+                      Defaults to ["m_rid", "time_series.m_rid"].
                       Pass None to disable field filtering.
         deduplicate: Whether to remove duplicate records while preserving order. Defaults to True.
 
     Returns:
         List of flattened dictionaries (records) from all BaseModel instances.
-        Records from multiple models are concatenated in the order they appear,
-        with ignored fields removed and optionally duplicates eliminated while preserving order.
 
     Raises:
         KeyError: If specified domain is not found in the data
