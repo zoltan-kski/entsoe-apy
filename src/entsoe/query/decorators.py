@@ -108,9 +108,13 @@ def split_date_range(func):
     Decorator that automatically splits large date ranges into smaller chunks.
 
     When a date range exceeds the specified limit (default 365 days), this decorator
-    splits the requested period into two halves, makes recursive calls for each half
-    in parallel using ThreadPoolExecutor, and combines the results into a single list
+    splits the requested period into multiple chunks and makes parallel API calls
+    for all chunks using ThreadPoolExecutor. Results are combined into a single list
     of BaseModel instances.
+
+    The maximum number of concurrent API calls is controlled by the max_workers
+    configuration setting (default: 4), which prevents overwhelming the API or 
+    system resources.
 
     For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
     - The 1-year limit applies to periodStartUpdate/periodEndUpdate
@@ -123,8 +127,12 @@ def split_date_range(func):
     @wraps(func)
     def range_wrapper(params, *args, **kwargs):
         logger.trace("split_date_range wrapper: Enter")
-        # Get max_days_limit from context
+        # Get context values
         max_days_limit = max_days_limit_ctx.get()
+        current_offset_increment = offset_increment_ctx.get()
+        # Get max_workers from config
+        config = get_config()
+        max_workers = config.max_workers
 
         # Determine which parameters to use for range checking
         period_start_update = params.get("periodStartUpdate")
@@ -146,63 +154,54 @@ def split_date_range(func):
             return func(params, *args, **kwargs)
 
         # Check if the range exceeds the limit
-        if check_date_range_limit(check_start, check_end, max_days=max_days_limit):
-            logger.info(
-                f"Date range {check_start} to {check_end} exceeds {max_days_limit} day limit, splitting query"
-            )
+        if not check_date_range_limit(check_start, check_end, max_days=max_days_limit):
+            # Range is within limit, make the API call
+            logger.trace("split_date_range wrapper: Exit without split")
+            return func(params, *args, **kwargs)
 
-            # Split the range and make recursive calls
-            pivot_date = split_date_range_util(
-                check_start, check_end, max_days=max_days_limit
-            )
-            logger.debug(f"Split at pivot date: {pivot_date}")
+        logger.info(
+            f"Date range {check_start} to {check_end} exceeds {max_days_limit} day limit, splitting query"
+        )
 
-            # Create new params for the first half
-            params1 = params.copy()
-            params1[split_param_end] = pivot_date
-            logger.trace(
-                f"First half: {params1[split_param_start]} to {params1[split_param_end]}"
-            )
+        # Split the date range into all necessary chunks upfront
+        date_ranges = split_date_range_util(
+            check_start, check_end, max_days=max_days_limit
+        )
+        
+        logger.info(f"Split date range into {len(date_ranges)} chunks")
+        logger.debug(f"Date ranges: {date_ranges}")
 
-            # Create new params for the second half
-            params2 = params.copy()
-            params2[split_param_start] = pivot_date
-            logger.trace(
-                f"Second half: {params2[split_param_start]} to {params2[split_param_end]}"
-            )
+        def call_with_range(start_end_tuple):
+            """Helper function to call API with a specific date range."""
+            start, end = start_end_tuple
+            # Set offset_increment context variable in the worker thread
+            # Note: In Python 3.13+, context variables are not automatically
+            # propagated to ThreadPoolExecutor threads, so we set them manually
+            offset_token = offset_increment_ctx.set(current_offset_increment)
+            try:
+                # Create params for this chunk
+                chunk_params = params.copy()
+                chunk_params[split_param_start] = start
+                chunk_params[split_param_end] = end
+                logger.debug(f"Fetching chunk: {start} to {end}")
+                return func(chunk_params, *args, **kwargs)
+            finally:
+                offset_increment_ctx.reset(offset_token)
 
-            # Execute both halves in parallel using ThreadPoolExecutor
-            # Get current context values to pass explicitly to worker threads
-            current_max_days = max_days_limit_ctx.get()
-            current_offset_increment = offset_increment_ctx.get()
+        # Execute all chunks in parallel
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(call_with_range, date_range) for date_range in date_ranges]
+            
+            # Collect results in order
+            results = []
+            for i, future in enumerate(futures):
+                chunk_result = future.result()
+                results.extend(chunk_result)
+                logger.trace(f"Chunk {i+1}/{len(date_ranges)} completed with {len(chunk_result)} results")
 
-            def call_in_thread(params_arg):
-                # Set context variables in the worker thread
-                max_days_token = max_days_limit_ctx.set(current_max_days)
-                offset_token = offset_increment_ctx.set(current_offset_increment)
-                try:
-                    return range_wrapper(params_arg, *args, **kwargs)
-                finally:
-                    max_days_limit_ctx.reset(max_days_token)
-                    offset_increment_ctx.reset(offset_token)
-
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                future1 = executor.submit(call_in_thread, params1)
-                future2 = executor.submit(call_in_thread, params2)
-
-                # Wait for both to complete and get results
-                result1 = future1.result()
-                result2 = future2.result()
-
-            logger.debug(
-                f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
-            )
-            logger.trace("split_date_range wrapper: Exit after merge")
-            return [*result1, *result2]
-
-        # Range is within limit, make the API call
-        logger.trace("split_date_range wrapper: Exit without split")
-        return func(params, *args, **kwargs)
+        logger.debug(f"Merged results from {len(date_ranges)} chunks: {len(results)} total results")
+        logger.trace("split_date_range wrapper: Exit after merge")
+        return results
 
     return range_wrapper
 

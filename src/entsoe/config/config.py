@@ -83,6 +83,7 @@ class EntsoEConfig:
         timeout: int = 5,
         retries: int = 5,
         retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
+        max_workers: int = 4,
         log_level: LogLevel = "SUCCESS",
     ):
         """
@@ -96,6 +97,8 @@ class EntsoEConfig:
             retries: Number of retry attempts for failed requests (default: 5)
             retry_delay: Function that takes attempt number and returns delay in seconds,
                         or integer for constant delay (default: exponential backoff 2**attempt)
+            max_workers: Maximum number of parallel API calls when splitting large date
+                        ranges (default: 4)
             log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                       INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
 
@@ -138,6 +141,7 @@ class EntsoEConfig:
         else:
             # It's already a callable function (including the default)
             self.retry_delay = retry_delay
+        self.max_workers = max_workers
         self.log_level = log_level
 
     def validate_security_token(self) -> None:
@@ -198,6 +202,7 @@ def set_config(
     timeout: int = 5,
     retries: int = 5,
     retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
+    max_workers: int = 4,
     log_level: LogLevel = "SUCCESS",
 ) -> None:
     """
@@ -210,6 +215,8 @@ def set_config(
         retries: Number of retry attempts for failed requests (default: 5)
         retry_delay: Function that takes attempt number and returns delay in seconds,
                     or integer for constant delay (default: exponential backoff 2**attempt)
+        max_workers: Maximum number of parallel API calls when splitting large date
+                    ranges (default: 4)
         log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                   INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
     """
@@ -219,5 +226,6 @@ def set_config(
         timeout=timeout,
         retries=retries,
         retry_delay=retry_delay,
+        max_workers=max_workers,
         log_level=log_level,
     )
