@@ -2,8 +2,6 @@
 
 A Python library for accessing ENTSO-E Transparency Platform API endpoints.
 
--> [Documentation](https://entsoe-apy.berrisch.biz/)
-
 ## Highlights
 
 - Easy access to all ENTSO-E Transparency Platform API endpoints
@@ -24,7 +22,7 @@ pip install entsoe-apy
 
 ### API Key
 
-You need an ENTSOE API Key (also called token) refer to the [official documentation](https://transparencyplatform.zendesk.com/hc/en-us/articles/12845911031188-How-to-get-security-token) on how to obtain it. The package expects an environment variable called `ENTSOE_API` to be set with your API key. See [Configuration](docs/configuration.md) for more details and options.
+You need an ENTSOE API Key (also called token) refer to the [official documentation](https://transparencyplatform.zendesk.com/hc/en-us/articles/12845911031188-How-to-get-security-token) on how to obtain it. The package expects an environment variable called `ENTSOE_API` to be set with your API key. See [Configuration](https://entsoe-apy.berrisch.biz/configuration) for more details and options.
 
 ### Query Day-Ahead Prices
 
@@ -60,14 +58,14 @@ df = DataFrame(records)
 | 2018-09-30T22:00Z          |                                 5 |                                  46.5 | A62                       | EUR                            | MWH                                 | PT15M                         |
 
 
-The structure of the `result` object depends on the queried data. See the [examples](./examples.md) for more details.
+The structure of the `result` object depends on the queried data. See the [examples](https://entsoe-apy.berrisch.biz/examples) for more details.
 
 ## Next Steps
 
-- [ENTSOE](./ENTSOE/index.md) - Class documentation
-- [Mappings](./mappings.md) - EIC codes and area mappings
-- [Examples](./examples.md) - Practical examples and use cases
-- [Utilities](./utilities.md) - Utility functions for data processing
+- [ENTSOE](https://entsoe-apy.berrisch.biz/ENTSOE/index) - Class documentation
+- [Mappings](https://entsoe-apy.berrisch.biz/mappings) - EIC codes and area mappings
+- [Examples](https://entsoe-apy.berrisch.biz/examples) - Practical examples and use cases
+- [Utilities](https://entsoe-apy.berrisch.biz/utilities) - Utility functions for data processing
 
 
 ## Contributions
