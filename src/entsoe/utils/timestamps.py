@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal
 
 import isodate
-from loguru import logger
+from ..config.config import logger
 
 
 def calculate_timestamp(
