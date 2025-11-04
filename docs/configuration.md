@@ -11,6 +11,7 @@ The library uses a global configuration system that allows you to set common par
 - **Retries**: Number of retry attempts for failed requests
 - **Retry Delay Function**: Function that determines wait time between retry attempts (supports exponential backoff)
 - **Log Level**: Configurable logging level for controlling output verbosity
+- **Number of Workers**: How many concurrent requests can be made
 
 ## API Key Management
 
