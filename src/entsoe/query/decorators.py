@@ -4,6 +4,7 @@ from functools import wraps
 import io
 from time import sleep
 import zipfile
+from itertools import chain
 
 from httpx import RequestError, Response
 from pydantic import BaseModel
@@ -189,20 +190,8 @@ def split_date_range(func):
                 offset_increment_ctx.reset(offset_token)
 
         # Execute all chunks in parallel
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(call_with_range, date_range)
-                for date_range in date_ranges
-            ]
-
-            # Collect results in order
-            results = []
-            for i, future in enumerate(futures):
-                chunk_result = future.result()
-                results.extend(chunk_result)
-                logger.trace(
-                    f"Chunk {i + 1}/{len(date_ranges)} completed with {len(chunk_result)} results"
-                )
+        with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="Thread") as executor:
+            results = [*chain.from_iterable(executor.map(call_with_range, date_ranges))]
 
         logger.debug(
             f"Merged results from {len(date_ranges)} chunks: {len(results)} total results"

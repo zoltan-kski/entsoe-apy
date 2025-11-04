@@ -61,7 +61,7 @@ def set_log_level(level: LogLevel) -> None:
         sink=sys.stderr,
         level=level,
         colorize=True,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format="<green>{time:YYYYMMDD HH:mm:ss}</green> | <level>{level: <8}</level> | <yellow>{thread.name: <10}</yellow> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     )
 
 
