@@ -1,5 +1,6 @@
-from contextvars import ContextVar
-from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar, copy_context
+from functools import wraps, partial
 import io
 from time import sleep
 import zipfile
@@ -107,8 +108,9 @@ def split_date_range(func):
     Decorator that automatically splits large date ranges into smaller chunks.
 
     When a date range exceeds the specified limit (default 365 days), this decorator
-    splits the requested period into two halves, makes recursive calls for each half,
-    and combines the results into a single list of BaseModel instances.
+    splits the requested period into two halves, makes recursive calls for each half
+    in parallel using ThreadPoolExecutor, and combines the results into a single list
+    of BaseModel instances.
 
     For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
     - The 1-year limit applies to periodStartUpdate/periodEndUpdate
@@ -169,9 +171,28 @@ def split_date_range(func):
                 f"Second half: {params2[split_param_start]} to {params2[split_param_end]}"
             )
 
-            # Recursively call for both halves
-            result1 = range_wrapper(params1, *args, **kwargs)
-            result2 = range_wrapper(params2, *args, **kwargs)
+            # Execute both halves in parallel using ThreadPoolExecutor
+            # Get current context values to pass explicitly to worker threads
+            current_max_days = max_days_limit_ctx.get()
+            current_offset_increment = offset_increment_ctx.get()
+            
+            def call_in_thread(params_arg):
+                # Set context variables in the worker thread
+                max_days_token = max_days_limit_ctx.set(current_max_days)
+                offset_token = offset_increment_ctx.set(current_offset_increment)
+                try:
+                    return range_wrapper(params_arg, *args, **kwargs)
+                finally:
+                    max_days_limit_ctx.reset(max_days_token)
+                    offset_increment_ctx.reset(offset_token)
+            
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                future1 = executor.submit(call_in_thread, params1)
+                future2 = executor.submit(call_in_thread, params2)
+                
+                # Wait for both to complete and get results
+                result1 = future1.result()
+                result2 = future2.result()
 
             logger.debug(
                 f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
