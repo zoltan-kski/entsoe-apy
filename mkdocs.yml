@@ -11,8 +11,8 @@ nav:
       - Transmission: ENTSOE/transmission.md
       - Outages: ENTSOE/outages.md
       - Balancing: ENTSOE/balancing.md
-      - OMI: ENTSOE/omi.md
       - Master Data: ENTSOE/master_data.md
+      - OMI: ENTSOE/omi.md
   - Examples: examples.md
   - Utilities: utilities.md
   - Mappings: mappings.md
