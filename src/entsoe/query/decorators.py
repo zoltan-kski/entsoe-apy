@@ -113,7 +113,7 @@ def split_date_range(func):
     of BaseModel instances.
 
     The maximum number of concurrent API calls is controlled by the max_workers
-    configuration setting (default: 4), which prevents overwhelming the API or 
+    configuration setting (default: 4), which prevents overwhelming the API or
     system resources.
 
     For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
@@ -167,7 +167,7 @@ def split_date_range(func):
         date_ranges = split_date_range_util(
             check_start, check_end, max_days=max_days_limit
         )
-        
+
         logger.info(f"Split date range into {len(date_ranges)} chunks")
         logger.debug(f"Date ranges: {date_ranges}")
 
@@ -190,16 +190,23 @@ def split_date_range(func):
 
         # Execute all chunks in parallel
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(call_with_range, date_range) for date_range in date_ranges]
-            
+            futures = [
+                executor.submit(call_with_range, date_range)
+                for date_range in date_ranges
+            ]
+
             # Collect results in order
             results = []
             for i, future in enumerate(futures):
                 chunk_result = future.result()
                 results.extend(chunk_result)
-                logger.trace(f"Chunk {i+1}/{len(date_ranges)} completed with {len(chunk_result)} results")
+                logger.trace(
+                    f"Chunk {i + 1}/{len(date_ranges)} completed with {len(chunk_result)} results"
+                )
 
-        logger.debug(f"Merged results from {len(date_ranges)} chunks: {len(results)} total results")
+        logger.debug(
+            f"Merged results from {len(date_ranges)} chunks: {len(results)} total results"
+        )
         logger.trace("split_date_range wrapper: Exit after merge")
         return results
 

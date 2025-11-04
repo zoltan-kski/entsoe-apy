@@ -69,7 +69,9 @@ def check_date_range_limit(
     return exceeds_limit
 
 
-def split_date_range(period_start: int, period_end: int, max_days: int = 365) -> list[tuple[int, int]]:
+def split_date_range(
+    period_start: int, period_end: int, max_days: int = 365
+) -> list[tuple[int, int]]:
     """
     Split a date range into chunks of maximum specified days.
 
@@ -93,19 +95,19 @@ def split_date_range(period_start: int, period_end: int, max_days: int = 365) ->
         # Check if remaining range is within limit
         current_start_dt = parse_entsoe_datetime(current_start)
         remaining_days = (end_dt - current_start_dt).days
-        
+
         if remaining_days <= max_days:
             # Last chunk - add remaining range
             date_ranges.append((current_start, period_end))
             break
-        
+
         # Calculate pivot date for this chunk
         pivot_dt = current_start_dt + timedelta(days=max_days)
         period_pivot = format_entsoe_datetime(pivot_dt)
-        
+
         # Add this chunk
         date_ranges.append((current_start, period_pivot))
-        
+
         # Move to next chunk
         current_start = period_pivot
 

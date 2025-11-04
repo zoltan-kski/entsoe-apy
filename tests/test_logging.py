@@ -42,4 +42,6 @@ class TestLogging:
             assert mock_logger.debug.called
             debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
             # The function now returns a list of chunks, so logging changed
-            assert any("chunks" in arg.lower() or "split" in arg.lower() for arg in debug_calls)
+            assert any(
+                "chunks" in arg.lower() or "split" in arg.lower() for arg in debug_calls
+            )
