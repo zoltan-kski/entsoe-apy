@@ -95,7 +95,7 @@ class EntsoEConfig:
             retry_delay: Function that takes attempt number and returns delay in seconds,
                         or integer for constant delay (default: exponential backoff 2**attempt)
             max_workers: Maximum number of parallel API calls when splitting large date
-                        ranges (default: 10)
+                        ranges (default: 12)
             log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                       INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
 
