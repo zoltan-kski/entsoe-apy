@@ -80,7 +80,7 @@ class EntsoEConfig:
         timeout: int = 5,
         retries: int = 5,
         retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
-        max_workers: int = 10,
+        max_workers: int = 12,
         log_level: LogLevel = "SUCCESS",
     ):
         """
@@ -199,7 +199,7 @@ def set_config(
     timeout: int = 5,
     retries: int = 5,
     retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
-    max_workers: int = 4,
+    max_workers: int = 12,
     log_level: LogLevel = "SUCCESS",
 ) -> None:
     """
@@ -213,7 +213,7 @@ def set_config(
         retry_delay: Function that takes attempt number and returns delay in seconds,
                     or integer for constant delay (default: exponential backoff 2**attempt)
         max_workers: Maximum number of parallel API calls when splitting large date
-                    ranges (default: 4)
+                    ranges (default: 12)
         log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                   INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
     """
