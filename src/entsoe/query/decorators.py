@@ -176,8 +176,8 @@ def split_date_range(func):
             """Helper function to call API with a specific date range."""
             start, end = start_end_tuple
             # Set offset_increment context variable in the worker thread
-            # Note: In Python 3.13+, context variables are not automatically
-            # propagated to ThreadPoolExecutor threads, so we set them manually
+            # Note: Context variables are not automatically propagated to
+            # ThreadPoolExecutor threads in any Python version, so we set them manually
             offset_token = offset_increment_ctx.set(current_offset_increment)
             try:
                 # Create params for this chunk
