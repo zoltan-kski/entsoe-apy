@@ -7,7 +7,6 @@ from uuid import UUID
 
 from loguru._logger import Core as _Core, Logger as _Logger
 
-# Type alias for log levels
 LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
 LogFormat = (
     "<fg #B0BEC5>{time:YYYY-MM-DD HH:mm:ss}</fg #B0BEC5> | "
