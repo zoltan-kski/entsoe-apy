@@ -37,6 +37,53 @@ class UnexpectedError(Exception):
     pass
 
 
+class ContextPropagatingThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    ThreadPoolExecutor that propagates context variables to worker threads.
+
+    This custom executor extends ThreadPoolExecutor to ensure that context variables
+    are properly propagated from the main thread to worker threads. Specifically, it
+    captures the offset_increment_ctx value when a task is submitted and restores it
+    in the worker thread before task execution.
+
+    This is necessary because Python's contextvars are not automatically inherited by
+    threads created via ThreadPoolExecutor, but pagination logic requires access to
+    the offset_increment value in worker threads.
+
+    Example:
+        with ContextPropagatingThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(some_function, arg) for arg in args]
+            results = [future.result() for future in futures]
+    """
+
+    @staticmethod
+    def _context_propagation_wrapper(fn, offset_increment, *args, **kwargs):
+        """
+        Wrapper method that propagates context variables to worker threads.
+
+        This method is used internally to ensure that context variables
+        (specifically offset_increment_ctx) are properly set in worker threads
+        before executing the target function. Python's contextvars are not
+        automatically inherited by threads, so this wrapper explicitly restores
+        the context before function execution.
+
+        Args:
+            fn: The function to execute in the worker thread
+            offset_increment: The offset increment value to propagate to the worker thread
+            *args: Positional arguments to pass to the function
+            **kwargs: Keyword arguments to pass to the function
+
+        Returns:
+            The return value of the executed function
+        """
+        offset_increment_ctx.set(offset_increment)
+        return fn(*args, **kwargs)
+
+    def submit(self, fn, *args, **kwargs):
+        offset_increment = offset_increment_ctx.get()
+        return super().submit(self._context_propagation_wrapper, fn, offset_increment, *args, **kwargs)
+
+
 def unzip(func):
     """
     Decorator that handles ZIP responses from the ENTSO-E API.
@@ -172,28 +219,21 @@ def split_date_range(func):
         logger.info(f"Split date range into {len(date_ranges)} chunks")
         logger.debug(f"Date ranges: {date_ranges}")
 
-        def call_with_range(start_end_tuple):
+        def call_with_range(start_end_tuple: tuple[int, int]):
             """Helper function to call API with a specific date range."""
             start, end = start_end_tuple
-            # Set offset_increment context variable in the worker thread
-            # Note: Context variables are not automatically propagated to
-            # ThreadPoolExecutor threads in any Python version, so we set them manually
-            offset_token = offset_increment_ctx.set(current_offset_increment)
-            try:
-                # Create params for this chunk
-                chunk_params = params.copy()
-                chunk_params[split_param_start] = start
-                chunk_params[split_param_end] = end
-                logger.debug(f"Fetching chunk: {start} to {end}")
-                return func(chunk_params, *args, **kwargs)
-            finally:
-                offset_increment_ctx.reset(offset_token)
+            chunk_params = params.copy()
+            chunk_params[split_param_start] = start
+            chunk_params[split_param_end] = end
+            logger.debug(f"Fetching chunk: {start} to {end}")
+            return func(chunk_params, *args, **kwargs)
 
         # Execute all chunks in parallel
-        with ThreadPoolExecutor(
+        with ContextPropagatingThreadPoolExecutor(
             max_workers=max_workers, thread_name_prefix="Thread"
         ) as executor:
-            results = [*chain.from_iterable(executor.map(call_with_range, date_ranges))]
+            futures = [executor.submit(call_with_range, dr) for dr in date_ranges]
+            results = [*chain.from_iterable(future.result() for future in futures)]
 
         logger.debug(
             f"Merged results from {len(date_ranges)} chunks: {len(results)} total results"
