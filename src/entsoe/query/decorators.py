@@ -177,7 +177,6 @@ def split_date_range(func):
         logger.trace("split_date_range wrapper: Enter")
         # Get context values
         max_days_limit = max_days_limit_ctx.get()
-        current_offset_increment = offset_increment_ctx.get()
         # Get max_workers from config
         config = get_config()
         max_workers = config.max_workers
