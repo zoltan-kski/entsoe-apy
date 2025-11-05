@@ -179,9 +179,6 @@ def split_date_range(func):
         logger.trace("split_date_range wrapper: Enter")
         # Get context values
         max_days_limit = max_days_limit_ctx.get()
-        # Get max_workers from config
-        config = get_config()
-        max_workers = config.max_workers
 
         # Determine which parameters to use for range checking
         period_start_update = params.get("periodStartUpdate")
@@ -231,7 +228,7 @@ def split_date_range(func):
 
         # Execute all chunks in parallel
         with ContextPropagatingThreadPoolExecutor(
-            max_workers=max_workers, thread_name_prefix="Thread"
+            max_workers=get_config().max_workers, thread_name_prefix="Thread"
         ) as executor:
             futures = [executor.submit(call_with_range, dr) for dr in date_ranges]
             results = [*chain.from_iterable(future.result() for future in futures)]
