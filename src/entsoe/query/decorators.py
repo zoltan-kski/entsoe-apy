@@ -81,7 +81,9 @@ class ContextPropagatingThreadPoolExecutor(ThreadPoolExecutor):
 
     def submit(self, fn, *args, **kwargs):
         offset_increment = offset_increment_ctx.get()
-        return super().submit(self._context_propagation_wrapper, fn, offset_increment, *args, **kwargs)
+        return super().submit(
+            self._context_propagation_wrapper, fn, offset_increment, *args, **kwargs
+        )
 
 
 def unzip(func):
