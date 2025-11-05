@@ -9,6 +9,15 @@ from loguru._logger import Core as _Core, Logger as _Logger
 
 # Type alias for log levels
 LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+LogFormat = (
+    "<fg #B0BEC5>{time:YYYY-MM-DD HH:mm:ss}</fg #B0BEC5> | "
+    "<level>{level: <8}</level> | "
+    "<fg #E91E63>{thread.name: <10}</fg #E91E63> | "
+    "<fg #2196F3>{name}</fg #2196F3>:"
+    "<fg #03A9F4>{function}</fg #03A9F4>:"
+    "<fg #009688>{line}</fg #009688> - "
+    "<level>{message}</level>"
+)
 
 # Create an independent Loguru logger instance for this package
 logger = _Logger(
@@ -58,7 +67,7 @@ def set_log_level(level: LogLevel) -> None:
         sink=sys.stderr,
         level=level,
         colorize=True,
-        format="<fg #B0BEC5>{time:YYYY-MM-DD HH:mm:ss}</fg #B0BEC5> | <level>{level: <8}</level> | <fg #E91E63>{thread.name: <10}</fg #E91E63> | <fg #2196F3>{name}</fg #2196F3>:<fg #03A9F4>{function}</fg #03A9F4>:<fg #009688>{line}</fg #009688> - <level>{message}</level>",
+        format=LogFormat,
     )
 
 
