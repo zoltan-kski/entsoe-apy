@@ -11,6 +11,7 @@ LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRI
 LogFormat = (
     "<fg #B0BEC5>{time:YYYY-MM-DD HH:mm:ss}</fg #B0BEC5> | "
     "<level>{level: <8}</level> | "
+    "<fg #E91E63>{process.name: <11}</fg #E91E63> | "
     "<fg #E91E63>{thread.name: <10}</fg #E91E63> | "
     "<fg #2196F3>{name}</fg #2196F3>:"
     "<fg #03A9F4>{function}</fg #03A9F4>:"
