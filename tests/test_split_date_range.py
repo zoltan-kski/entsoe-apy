@@ -2,7 +2,12 @@
 
 from unittest.mock import patch
 
-from entsoe.query.decorators import max_days_limit_ctx, split_date_range
+import entsoe
+from entsoe.query.decorators import (
+    max_days_limit_ctx,
+    offset_increment_ctx,
+    split_date_range,
+)
 
 
 class TestSplitDateRangeDecorator:
@@ -23,7 +28,10 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202201010000,  # 2022-01-01 00:00
         }
 
-        token = max_days_limit_ctx.set(365)
+        # Set up required context variables and config
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -34,7 +42,8 @@ class TestSplitDateRangeDecorator:
                 assert "periodStart" in item
                 assert "periodEnd" in item
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_no_split_when_within_limit_period_only(self):
         """Test that no split occurs when date range is within limit
@@ -51,7 +60,9 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202007010000,  # 2020-07-01 00:00
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -60,7 +71,8 @@ class TestSplitDateRangeDecorator:
             assert result[0]["periodStart"] == 202001010000
             assert result[0]["periodEnd"] == 202007010000
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_split_with_update_parameters(self):
         """Test that the decorator splits based on update parameters
@@ -80,7 +92,9 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202007010000,  # 2020-07-01 00:00 (6 months)
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -89,7 +103,8 @@ class TestSplitDateRangeDecorator:
             assert result[0]["periodStart"] == 202001010000
             assert result[0]["periodEnd"] == 202201010000
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_split_update_parameters_exceed_limit(self):
         """Test that the decorator splits based on update parameters
@@ -108,7 +123,9 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202201010000,  # 2022-01-01 00:00 (2 years)
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -122,7 +139,8 @@ class TestSplitDateRangeDecorator:
                 assert "periodStartUpdate" in item
                 assert "periodEndUpdate" in item
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_no_period_parameters(self):
         """Test that the decorator doesn't split when no period parameters
@@ -137,7 +155,9 @@ class TestSplitDateRangeDecorator:
             "documentType": "A77",
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -145,7 +165,8 @@ class TestSplitDateRangeDecorator:
             assert len(result) == 1
             assert result[0] == params
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_logging_for_update_parameters(self):
         """Test that appropriate log messages are generated when using
@@ -163,7 +184,9 @@ class TestSplitDateRangeDecorator:
             "periodEndUpdate": 202201010000,  # 2022-01-01 (2 years - exceeds limit)
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             with patch("entsoe.query.decorators.logger") as mock_logger:
                 mock_query(params)
@@ -178,7 +201,8 @@ class TestSplitDateRangeDecorator:
                     for arg in info_calls
                 ), "Should log INFO that the date range is being split"
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_logging_for_period_parameters(self):
         """Test that appropriate log messages are generated when using
@@ -194,7 +218,9 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202201010000,  # 2022-01-01 (2 years - exceeds limit)
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             with patch("entsoe.query.decorators.logger") as mock_logger:
                 mock_query(params)
@@ -209,7 +235,8 @@ class TestSplitDateRangeDecorator:
                     for arg in info_calls
                 ), "Should log INFO that the date range is being split"
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_split_preserves_other_params(self):
         """Test that splitting preserves all other parameters."""
@@ -227,7 +254,9 @@ class TestSplitDateRangeDecorator:
             "businessType": "A53",
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
@@ -237,10 +266,11 @@ class TestSplitDateRangeDecorator:
                 assert item["biddingZone_Domain"] == "10YDE-VE-------2"
                 assert item["businessType"] == "A53"
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
 
     def test_recursive_splitting(self):
-        """Test that the decorator can recursively split very large ranges."""
+        """Test that the decorator can split very large ranges into multiple parts."""
 
         @split_date_range
         def mock_query(params):
@@ -253,11 +283,14 @@ class TestSplitDateRangeDecorator:
             "periodEnd": 202401010000,  # 2024-01-01 00:00 (4 years)
         }
 
-        token = max_days_limit_ctx.set(365)
+        entsoe.set_config()
+        max_days_token = max_days_limit_ctx.set(365)
+        offset_token = offset_increment_ctx.set(100)
         try:
             result = mock_query(params)
 
             # Should split into at least 4 parts
             assert len(result) >= 4
         finally:
-            max_days_limit_ctx.reset(token)
+            max_days_limit_ctx.reset(max_days_token)
+            offset_increment_ctx.reset(offset_token)
