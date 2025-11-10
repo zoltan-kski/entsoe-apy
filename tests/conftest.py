@@ -20,4 +20,5 @@ def cleanup_logger():
             try:
                 logger.remove(handler_id)
             except ValueError:
+                # Handler may have already been removed; safe to ignore.
                 pass
