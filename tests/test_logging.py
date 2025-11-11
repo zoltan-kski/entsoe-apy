@@ -41,4 +41,7 @@ class TestLogging:
             # Verify DEBUG logging for processing details
             assert mock_logger.debug.called
             debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
-            assert any("Split at" in arg for arg in debug_calls)
+            # The function now returns a list of chunks, so logging changed
+            assert any(
+                "chunks" in arg.lower() or "split" in arg.lower() for arg in debug_calls
+            )

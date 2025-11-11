@@ -7,8 +7,17 @@ from uuid import UUID
 
 from loguru._logger import Core as _Core, Logger as _Logger
 
-# Type alias for log levels
 LogLevel = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+LogFormat = (
+    "<fg #B0BEC5>{time:YYYY-MM-DD HH:mm:ss}</fg #B0BEC5> | "
+    "<level>{level: <8}</level> | "
+    "<fg #E91E63>{process.name: <11}</fg #E91E63> | "
+    "<fg #E91E63>{thread.name: <10}</fg #E91E63> | "
+    "<fg #2196F3>{name}</fg #2196F3>:"
+    "<fg #03A9F4>{function}</fg #03A9F4>:"
+    "<fg #009688>{line}</fg #009688> - "
+    "<level>{message}</level>"
+)
 
 # Create an independent Loguru logger instance for this package
 logger = _Logger(
@@ -24,12 +33,8 @@ logger = _Logger(
     extra={},
 )
 
-# Add default sink to sys.stderr with SUCCESS level
-_handler_id = logger.add(
-    sink=sys.stderr,
-    level="SUCCESS",
-    colorize=True,
-)
+# No default sink - will be added by set_log_level() when set_config() is called
+_handler_id: Optional[int] = None
 
 
 def set_log_level(level: LogLevel) -> None:
@@ -50,18 +55,19 @@ def set_log_level(level: LogLevel) -> None:
         raise ValueError(f"Invalid log_level '{level}'. Must be one of: {valid_levels}")
 
     # Remove the current handler if it exists
-    try:
-        logger.remove(_handler_id)
-    except ValueError:
-        # Handler doesn't exist, that's fine
-        pass
+    if _handler_id is not None:
+        try:
+            logger.remove(_handler_id)
+        except ValueError:
+            # Handler doesn't exist, that's fine
+            pass
 
     # Add a new handler with the updated level
     _handler_id = logger.add(
         sink=sys.stderr,
         level=level,
         colorize=True,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format=LogFormat,
     )
 
 
@@ -83,6 +89,7 @@ class EntsoEConfig:
         timeout: int = 5,
         retries: int = 5,
         retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
+        max_workers: int = 4,
         log_level: LogLevel = "SUCCESS",
     ):
         """
@@ -96,6 +103,8 @@ class EntsoEConfig:
             retries: Number of retry attempts for failed requests (default: 5)
             retry_delay: Function that takes attempt number and returns delay in seconds,
                         or integer for constant delay (default: exponential backoff 2**attempt)
+            max_workers: Maximum number of parallel API calls when splitting large date
+                        ranges (default: 4)
             log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                       INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
 
@@ -138,6 +147,7 @@ class EntsoEConfig:
         else:
             # It's already a callable function (including the default)
             self.retry_delay = retry_delay
+        self.max_workers = max_workers
         self.log_level = log_level
 
     def validate_security_token(self) -> None:
@@ -198,6 +208,7 @@ def set_config(
     timeout: int = 5,
     retries: int = 5,
     retry_delay: Union[int, Callable[[int], int]] = lambda attempt: 2**attempt,
+    max_workers: int = 4,
     log_level: LogLevel = "SUCCESS",
 ) -> None:
     """
@@ -210,6 +221,8 @@ def set_config(
         retries: Number of retry attempts for failed requests (default: 5)
         retry_delay: Function that takes attempt number and returns delay in seconds,
                     or integer for constant delay (default: exponential backoff 2**attempt)
+        max_workers: Maximum number of parallel API calls when splitting large date
+                    ranges (default: 4)
         log_level: Log level for loguru logger. Available levels: TRACE, DEBUG,
                   INFO, SUCCESS, WARNING, ERROR, CRITICAL (default: SUCCESS)
     """
@@ -219,5 +232,6 @@ def set_config(
         timeout=timeout,
         retries=retries,
         retry_delay=retry_delay,
+        max_workers=max_workers,
         log_level=log_level,
     )

@@ -1,6 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor
 from contextvars import ContextVar
 from functools import wraps
 import io
+from itertools import chain
 from time import sleep
 import zipfile
 
@@ -33,6 +35,55 @@ class UnexpectedError(Exception):
     """Raised when the ENTSO-E API returns an unexpected error."""
 
     pass
+
+
+class ContextPropagatingThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    ThreadPoolExecutor that propagates context variables to worker threads.
+
+    This custom executor extends ThreadPoolExecutor to ensure that context variables
+    are properly propagated from the main thread to worker threads. Specifically, it
+    captures the offset_increment_ctx value when a task is submitted and restores it
+    in the worker thread before task execution.
+
+    This is necessary because Python's contextvars are not automatically inherited by
+    threads created via ThreadPoolExecutor, but pagination logic requires access to
+    the offset_increment value in worker threads.
+
+    Example:
+        with ContextPropagatingThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(some_function, arg) for arg in args]
+            results = [future.result() for future in futures]
+    """
+
+    @staticmethod
+    def _context_propagation_wrapper(fn, offset_increment, *args, **kwargs):
+        """
+        Wrapper method that propagates context variables to worker threads.
+
+        This method is used internally to ensure that context variables
+        (specifically offset_increment_ctx) are properly set in worker threads
+        before executing the target function. Python's contextvars are not
+        automatically inherited by threads, so this wrapper explicitly restores
+        the context before function execution.
+
+        Args:
+            fn: The function to execute in the worker thread
+            offset_increment: The offset increment value to propagate to the worker thread
+            *args: Positional arguments to pass to the function
+            **kwargs: Keyword arguments to pass to the function
+
+        Returns:
+            The return value of the executed function
+        """
+        offset_increment_ctx.set(offset_increment)
+        return fn(*args, **kwargs)
+
+    def submit(self, fn, *args, **kwargs):
+        offset_increment = offset_increment_ctx.get()
+        return super().submit(
+            self._context_propagation_wrapper, fn, offset_increment, *args, **kwargs
+        )
 
 
 def unzip(func):
@@ -107,8 +158,13 @@ def split_date_range(func):
     Decorator that automatically splits large date ranges into smaller chunks.
 
     When a date range exceeds the specified limit (default 365 days), this decorator
-    splits the requested period into two halves, makes recursive calls for each half,
-    and combines the results into a single list of BaseModel instances.
+    splits the requested period into multiple chunks and makes parallel API calls
+    for all chunks using ThreadPoolExecutor. Results are combined into a single list
+    of BaseModel instances.
+
+    The maximum number of concurrent API calls is controlled by the max_workers
+    configuration setting (default: 4), which prevents overwhelming the API or
+    system resources.
 
     For outages endpoints (when periodStartUpdate/periodEndUpdate are present):
     - The 1-year limit applies to periodStartUpdate/periodEndUpdate
@@ -121,7 +177,7 @@ def split_date_range(func):
     @wraps(func)
     def range_wrapper(params, *args, **kwargs):
         logger.trace("split_date_range wrapper: Enter")
-        # Get max_days_limit from context
+        # Get context values
         max_days_limit = max_days_limit_ctx.get()
 
         # Determine which parameters to use for range checking
@@ -144,44 +200,44 @@ def split_date_range(func):
             return func(params, *args, **kwargs)
 
         # Check if the range exceeds the limit
-        if check_date_range_limit(check_start, check_end, max_days=max_days_limit):
-            logger.info(
-                f"Date range {check_start} to {check_end} exceeds {max_days_limit} day limit, splitting query"
-            )
+        if not check_date_range_limit(check_start, check_end, max_days=max_days_limit):
+            # Range is within limit, make the API call
+            logger.trace("split_date_range wrapper: Exit without split")
+            return func(params, *args, **kwargs)
 
-            # Split the range and make recursive calls
-            pivot_date = split_date_range_util(
-                check_start, check_end, max_days=max_days_limit
-            )
-            logger.debug(f"Split at pivot date: {pivot_date}")
+        logger.info(
+            f"Date range {check_start} to {check_end} exceeds {max_days_limit} day limit, splitting query"
+        )
 
-            # Create new params for the first half
-            params1 = params.copy()
-            params1[split_param_end] = pivot_date
-            logger.trace(
-                f"First half: {params1[split_param_start]} to {params1[split_param_end]}"
-            )
+        # Split the date range into all necessary chunks upfront
+        date_ranges = split_date_range_util(
+            check_start, check_end, max_days=max_days_limit
+        )
 
-            # Create new params for the second half
-            params2 = params.copy()
-            params2[split_param_start] = pivot_date
-            logger.trace(
-                f"Second half: {params2[split_param_start]} to {params2[split_param_end]}"
-            )
+        logger.info(f"Split date range into {len(date_ranges)} chunks")
+        logger.debug(f"Date ranges: {date_ranges}")
 
-            # Recursively call for both halves
-            result1 = range_wrapper(params1, *args, **kwargs)
-            result2 = range_wrapper(params2, *args, **kwargs)
+        def call_with_range(start_end_tuple: tuple[int, int]):
+            """Helper function to call API with a specific date range."""
+            start, end = start_end_tuple
+            chunk_params = params.copy()
+            chunk_params[split_param_start] = start
+            chunk_params[split_param_end] = end
+            logger.debug(f"Fetching chunk: {start} to {end}")
+            return func(chunk_params, *args, **kwargs)
 
-            logger.debug(
-                f"Merged results from split range: {len(result1)} + {len(result2)} = {len(result1) + len(result2)} results"
-            )
-            logger.trace("split_date_range wrapper: Exit after merge")
-            return [*result1, *result2]
+        # Execute all chunks in parallel
+        with ContextPropagatingThreadPoolExecutor(
+            max_workers=get_config().max_workers, thread_name_prefix="Thread"
+        ) as executor:
+            futures = [executor.submit(call_with_range, dr) for dr in date_ranges]
+            results = [*chain.from_iterable(future.result() for future in futures)]
 
-        # Range is within limit, make the API call
-        logger.trace("split_date_range wrapper: Exit without split")
-        return func(params, *args, **kwargs)
+        logger.debug(
+            f"Merged results from {len(date_ranges)} chunks: {len(results)} total results"
+        )
+        logger.trace("split_date_range wrapper: Exit after merge")
+        return results
 
     return range_wrapper
 
