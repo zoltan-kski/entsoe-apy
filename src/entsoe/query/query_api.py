@@ -42,7 +42,9 @@ def query_core(params: dict) -> Response:
     logger.info(f"Making API request with params: {params}")
     logger.debug(f"Request URL: {config.endpoint_url}, timeout: {config.timeout}s")
 
-    response = get(config.endpoint_url, params=params_with_token, timeout=config.timeout)
+    response = get(
+        config.endpoint_url, params=params_with_token, timeout=config.timeout
+    )
 
     content_length = len(response.text) if response.text else 0
     logger.info(
